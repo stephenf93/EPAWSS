@@ -563,68 +563,12 @@ void Unpacker::unpack(BYTE *data, int len)
 			return;
 
 
-
-		short messageID, messageSize = 0;
-
-		messageID = _byteswap_ushort(*(short*)&pByte[0]);
-		messageSize = _byteswap_ushort(*(short*)&pByte[2]);
-
-		//sprintf_s(out, "messageID: %d, messageSize: %d, len: %d\n", messageID, messageSize, len);
-		//OutputDebugString(out);
+		// Unpack Message
+		if (unpackMessage(pByte, len, intraPacketTime) < 0) return;
 
 
-		// Check for message with report data
-		if (messageID == 1 ||
-			messageID == 3 ||
-			messageID == 4 ||
-			messageID == 5 ||
-			messageID == 6)
-		{
-
-			if (messageSize > len)
-				return;
-
-			int dataIndex = 20; // start after message header
-
-			uint64_t baseReportTimeTag = 0;
-
-			while (dataIndex < pHeader->uMsgLength)
-			{
-
-				short reportID, reportSize = 0;
-
-				reportID = _byteswap_ushort(*(short*)&pByte[dataIndex]);
-				reportSize = _byteswap_ushort(*(short*)&pByte[dataIndex + 4]);
-
-				if (reportSize > (len - dataIndex))
-					return;
-
-				uint32_t timeTag32 = 0;
-				timeTag32 = _byteswap_ulong(*(uint32_t*)&pByte[dataIndex + 8]); // multiply by 50000 gets nanoseconds
-
-				putTimeFromReportTimeTag(intraPacketTime, timeTag32, reportID, true);
-
-
-				//sprintf_s(out, "timeTag64: %lld\n", timeTag64);
-				//OutputDebugString(out);
-
-				if (reportIDMap->find(reportID) != reportIDMap->end())
-				{ // Found reportID in the map
-					vector<Param*>* params = reportIDMap->at(reportID);
-
-					for (vector<Param*>::iterator iter = params->begin(); iter != params->end(); ++iter)
-					{
-						extractParam(&pByte[dataIndex], reportSize, (*iter));
-					}
-				}
-
-				dataIndex += reportSize;
-			}
-
-			pByte += pHeader->uMsgLength;
-			len -= pHeader->uMsgLength;
-
-		}
+		pByte += pHeader->uMsgLength;
+		len -= pHeader->uMsgLength;
 
 	}
 
@@ -717,94 +661,16 @@ void Unpacker::unpackEthernet(BYTE *data, int len)
 			overflowMsgLen = 0;
 		}
 
-		short messageID, messageSize = 0;
-
-		messageID = _byteswap_ushort(*(short*)& pByte[0]);
-		messageSize = _byteswap_ushort(*(short*)& pByte[2]);
-
-		//if (messageID == 4) {
-		//	sprintf_s(out, "messageID: %d, messageSize: %d, len: %d\n", messageID, messageSize, len);
-		//	OutputDebugString(out);
-		//}
-
-		uint64_t baseReportTimeTag = 0;
+		// Unpack Message
+		if (unpackMessage(pByte, len, intraPacketTime) < 0) return;
 
 
-		std::vector<int> report22Locations;
-		std::vector<int> report24Locations;
-
-		// Check for message with report data
-		if (messageID == 1 ||
-			messageID == 3 ||
-			messageID == 4 ||
-			messageID == 5 ||
-			messageID == 6)
-		{
-
-			// check for message overflow, and buffer
-			if (messageSize > len) {
-				memcpy_s(overflowBuf, MAX_CH10_PACKET_SIZE, pByte, len);
-				overflowBufSize = len;
-				overflowMsgLen = messageSize;
-				return;
-			}
-
-			int dataIndex = 20; // start after message header
-
-			OutputDebugString("=====\n");
-
-			while (dataIndex < pHeader->uDataLen - 46) // - 46 accounts for ethernet header and trailer
-			{
-				short reportID, reportSize = 0;
-
-				reportID = _byteswap_ushort(*(short*)&pByte[dataIndex]);
-				reportSize = _byteswap_ushort(*(short*)&pByte[dataIndex + 4]);
-
-				//OutputDebugString(std::string("reportID: " + std::to_string(reportID) + "\n").data());
-
-				if (reportID != 22 && reportID != 24) {
-				uint32_t timeTag32 = 0;
-				timeTag32 = _byteswap_ulong(*(uint32_t*)&pByte[dataIndex + 8]); // multiply by 50000 gets nanoseconds
-
-				putTimeFromReportTimeTag(intraPacketTime, timeTag32, reportID, true);
-
-
-				if (reportSize > (len - dataIndex))
-					return;
-
-				if (reportIDMap->find(reportID) != reportIDMap->end())
-				{ // Found reportID in the map
-					vector<Param *> * params = reportIDMap->at(reportID);
-
-					for (vector<Param *>::iterator iter = params->begin(); iter != params->end(); ++iter)
-					{
-						if ((*iter)->name == "Weapon_System_Track_Number_24")
-							OutputDebugString(std::string("Weapon_System_Track_Number_24 time: " + std::to_string(intraPacketTime) + " : " + std::to_string(timeTag32) + "\n").data());
-						extractParam(&pByte[dataIndex], reportSize, (*iter));
-					}
-				}
-				else { // report 22 or 24
-					if (reportID == 22)
-						report22Locations.push_back(dataIndex);
-					if (reportID == 24)
-						report24Locations.push_back(dataIndex);
-				}
-			}
-
-				decodeReports22and24(pByte, report22Locations, report24Locations, intraPacketTime);
-
-				dataIndex += reportSize;
-			}
-
-			pByte += pHeader->uDataLen;
-			len -= pHeader->uDataLen;
-
-		}
+		pByte += pHeader->uDataLen;
+		len -= pHeader->uDataLen;
 
 	}
 
 }
-
 
 
 // Takes a pointer to an EPAWSS messages, and extracts any parameters 
@@ -845,16 +711,32 @@ void Unpacker::unpackEPAWSS(BYTE* data, int len, LONGLONG iadsTimeForPacket)
 		overflowMsgLen = 0;
 	}
 
+
+	// Unpack Message
+	if (unpackMessage(pByte, len, iadsTimeForPacket) < 0) return;
+
+}
+
+
+
+// Once the Ethernet packet has been parsed to the data portion, this is the following process:
+// unpack message
+	// survey reports
+	// sort reports
+	// decode reports
+		// decode report
+
+int Unpacker::unpackMessage(BYTE* pByte, int len, long long iadsTime) {
+
 	short messageID, messageSize = 0;
 
 	messageID = _byteswap_ushort(*(short*)&pByte[0]);
 	messageSize = _byteswap_ushort(*(short*)&pByte[2]);
 
 	//if (messageID == 4) {
-		//sprintf_s(out, "messageID: %d, messageSize: %d, len: %d\n", messageID, messageSize, len);
-		//OutputDebugString(out);
+	//	sprintf_s(out, "messageID: %d, messageSize: %d, len: %d\n", messageID, messageSize, len);
+	//	OutputDebugString(out);
 	//}
-
 
 	// Check for message with report data
 	if (messageID == 1 ||
@@ -864,48 +746,134 @@ void Unpacker::unpackEPAWSS(BYTE* data, int len, LONGLONG iadsTimeForPacket)
 		messageID == 6)
 	{
 
+#ifdef DEBUG_UNPACK
+		OutputDebugString("\n=====\n");
+		OutputDebugString(std::string("Message: " + std::to_string(messageID) + "\n\n").data());
+#endif
+
 		// check for message overflow, and buffer
 		if (messageSize > len) {
 			memcpy_s(overflowBuf, MAX_CH10_PACKET_SIZE, pByte, len);
 			overflowBufSize = len;
 			overflowMsgLen = messageSize;
-			return;
+			return -1;
 		}
 
-		int dataIndex = 20; // start after message header
+		// Survey Reports
+#ifdef DEBUG_UNPACK
+		OutputDebugString("Survey Reports\n");
+#endif
+		std::map<short, std::vector<int>> reports;
+		surveyReports(pByte, len, reports);
 
-		while (dataIndex < len) // - 46 accounts for ethernet header and trailer
-		{
-			short reportID, reportSize = 0;
+		// Sort Report locations by time
+#ifdef DEBUG_UNPACK
+		OutputDebugString("\nSort locations\n");
+#endif
+		std::vector<int> reportLocations;
+		sortReportLocations(reports, reportLocations);
 
-			reportID = _byteswap_ushort(*(short*)&pByte[dataIndex]);
-			reportSize = _byteswap_ushort(*(short*)&pByte[dataIndex + 4]);
-
-			uint32_t timeTag32 = 0;
-			timeTag32 = _byteswap_ulong(*(uint32_t*)&pByte[dataIndex + 8]); // multiply by 50000 gets nanoseconds
-
-			putTimeFromReportTimeTag(iadsTimeForPacket, timeTag32, reportID, true);
-
-			if (reportSize > (len - dataIndex))
-				return;
-
-			if (reportIDMap->find(reportID) != reportIDMap->end())
-			{ // Found reportID in the map
-				vector<Param*>* params = reportIDMap->at(reportID);
-
-				for (vector<Param*>::iterator iter = params->begin(); iter != params->end(); ++iter)
-				{
-					extractParam(&pByte[dataIndex], reportSize, (*iter));
-				}
-			}
-
-			dataIndex += reportSize;
-		}
+		// Decode Reports
+#ifdef DEBUG_UNPACK
+		OutputDebugString("\nDecode Reports\n");
+#endif
+		decodeReports(pByte, len, reportLocations, iadsTime);
 
 	}
 
 }
 
+void Unpacker::surveyReports(BYTE* pByte, int len, std::map<short, std::vector<int>>& reports) {
+	int dataIndex = 20;
+
+	// Survey Reports
+	while (dataIndex < len) {
+		short reportID, reportSize = 0;
+		reportID = _byteswap_ushort(*(short*)&pByte[dataIndex]);
+		reportSize = _byteswap_ushort(*(short*)&pByte[dataIndex + 4]);
+
+		if (reportSize > (len - dataIndex) || reportSize == 0)
+			return;
+
+#ifdef DEBUG_UNPACK
+		OutputDebugString(std::string("reportID: " + std::to_string(reportID)).data());
+#endif
+
+		if (reports.find(reportID) == reports.end()) { // first of this reportID
+			std::vector<int> v; v.push_back(dataIndex);
+			reports.insert(std::pair<short, std::vector<int>>(reportID, v));
+
+#ifdef DEBUG_UNPACK
+			OutputDebugString(" first\n");
+#endif
+		}
+		else { // reportID already encountered
+			reports.find(reportID)->second.push_back(dataIndex);
+
+#ifdef DEBUG_UNPACK
+			OutputDebugString(" consecutive\n");
+#endif
+		}
+
+		dataIndex += reportSize;
+	}
+}
+
+void Unpacker::sortReportLocations(std::map<short, std::vector<int>>& inReports, std::vector<int>& outSortedLocations) {
+	// Get keys
+	std::vector<short> keys;
+	for (auto const& element : inReports)
+		keys.push_back(element.first);
+
+	// Iterate through reports map
+	bool notFinished = true;
+	int index = 0;
+	while (notFinished) {
+		notFinished = false;
+
+		for (int i = 0; i < keys.size(); i++) {
+			std::vector<int> locations = inReports.find(keys.at(i))->second;
+			if (index < locations.size()) {
+				outSortedLocations.push_back(locations.at(index));
+				notFinished = true;
+			}
+		}
+
+		index++;
+	}
+}
+
+void Unpacker::decodeReports(BYTE* pByte, int len, std::vector<int> reportLocations, long long iadsTime) {
+
+	for (int i = 0; i < reportLocations.size(); i++)
+	{
+		short reportID, reportSize = 0;
+
+		int dataIndex = reportLocations.at(i);
+
+		reportID = _byteswap_ushort(*(short*)&pByte[dataIndex]);
+		reportSize = _byteswap_ushort(*(short*)&pByte[dataIndex + 4]);
+
+		uint32_t timeTag32 = 0;
+		timeTag32 = _byteswap_ulong(*(uint32_t*)&pByte[dataIndex + 8]); // multiply by 50000 gets nanoseconds
+
+		putTimeFromReportTimeTag(iadsTime, timeTag32, reportID, true);
+
+
+		if (reportSize > (len - dataIndex))
+			return;
+
+		if (reportIDMap->find(reportID) != reportIDMap->end())
+		{ // Found reportID in the map
+			vector<Param*>* params = reportIDMap->at(reportID);
+
+			for (vector<Param*>::iterator iter = params->begin(); iter != params->end(); ++iter)
+			{
+				extractParam(&pByte[dataIndex], reportSize, (*iter));
+			}
+		}
+	}
+}
 
 void Unpacker::putTimeFromReportTimeTag(LONGLONG iadsTimeForPacket, uint32_t timeTag32, uint32_t reportID, bool makeSameTimeUnique) {
 
@@ -926,22 +894,34 @@ void Unpacker::putTimeFromReportTimeTag(LONGLONG iadsTimeForPacket, uint32_t tim
 	if (timeRecords->find(reportID) == timeRecords->end()) { // no record exists
 		r = new ReportTimeRecord();
 		timeRecords->insert(std::pair<uint32_t, ReportTimeRecord*>(reportID, r));
+
+#ifdef DEBUG_UNPACK
 		OutputDebugString("new record\n");
+#endif
 	}
 	else {
 		r = timeRecords->find(reportID)->second;
+
+#ifdef DEBUG_UNPACK
 		OutputDebugString("update record\n");
+#endif
 	}
+
+#ifdef DEBUG_UNPACK
 		OutputDebugString(std::string("ReportID: " + std::to_string(reportID) + "\n").data());
+#endif
 
 	// ==== Determine time using Report Time Tag ====
 	if (timeTag32 != r->timetag_previous) {
-		r->timetag_offset = 10;
+		r->timetag_offset = 1;
 		r->timetag_previous = timeTag32;
+
+#ifdef DEBUG_UNPACK
 		OutputDebugString("different time tag\n");
+#endif
 	}
 	else
-		timeTag32 += (r->timetag_offset-- * 20 * 10); // adding an increasing number of miliseconds
+		timeTag32 += (r->timetag_offset++ * 20); // adding an increasing number of miliseconds
 
 	uint64_t timeTag64 = (uint64_t)timeTag32 * 50000; // convert to nanoseconds
 
@@ -951,9 +931,12 @@ void Unpacker::putTimeFromReportTimeTag(LONGLONG iadsTimeForPacket, uint32_t tim
 	ds->PutTime(iadsTimeForPacket + (timeTag64 - r->baseReportTimeTag));
 	// ==============================================
 
+
+#ifdef DEBUG_UNPACK
 	OutputDebugString(std::string("PutTime(" + std::to_string(iadsTimeForPacket + (timeTag64 - r->baseReportTimeTag)) + ")\n").data());
 	//OutputDebugString(std::string("updated time tag: " + std::to_string(timeTag32) + "\n").data());
 	//OutputDebugString(std::string("baseReportTimeTg: " + std::to_string(r->baseReportTimeTag) + "\n").data());
+#endif
 }
 
 

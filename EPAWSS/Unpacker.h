@@ -23,6 +23,8 @@ using namespace std;
 #define PARAM_SET_RX 1
 #define PARAM_SET_TX 2
 
+//#define DEBUG_UNPACK
+
 class Unpacker
 {
 
@@ -54,6 +56,12 @@ public:
 	void unpackEPAWSS(BYTE* data, int len, LONGLONG iadsTimeForPacket);
 	void putTimeFromReportTimeTag(LONGLONG iadsTimeForPacket, uint32_t timeTag32, uint32_t reportID = 0, bool makeSameTimeUnique = false);
 	void extractParam(BYTE *data, int len, Param *param);
+
+	int unpackMessage(BYTE* pData, int len, long long iadsTime);
+	void surveyReports(BYTE* pData, int len, std::map<short, std::vector<int>> &reports);
+	void sortReportLocations(std::map<short, std::vector<int>>& inReports, std::vector<int>& outSortedLocations);
+	void decodeReports(BYTE* pByte, int len, std::vector<int> reportLocations, long long iadsTime);
+
 	void decodeReports22and24(BYTE* pByte, std::vector<int> report22Locations, std::vector<int> report24Locations, long long intraPacketTime);
 
 private:
