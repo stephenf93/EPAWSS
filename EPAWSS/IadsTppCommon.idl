@@ -1,0 +1,490 @@
+// SYMVIONICS, Inc. CONFIDENTIAL
+// Copyright (c) 2001-2013 SYMVIONICS, Inc., All Rights Reserved.
+//
+// NOTICE:  All information contained herein is, and remains the property of
+// SYMVIONICS, Inc. The intellectual and technical concepts contained herein are
+// proprietary to SYMVIONICS, Inc. and may be covered by U.S. and Foreign Patents,
+// patents in process, and are protected by trade secret or copyright law.
+// Dissemination of this information or reproduction of this material is
+// strictly forbidden unless prior written permission is obtained from
+// SYMVIONICS, Inc. Access to the source code contained herein is hereby forbidden
+// to anyone except current SYMVIONICS, Inc. employees, managers or contractors
+// who have executed Confidentiality and Non-disclosure agreements explicitly
+// covering such access.
+// 
+// The copyright notice above does not evidence any actual or intended
+// publication or disclosure of this source code, which includes information
+// that is confidential and/or proprietary, and is a trade secret, of
+// SYMVIONICS Inc. ANY REPRODUCTION, MODIFICATION, DISTRIBUTION, PUBLIC
+// PERFORMANCE, OR PUBLIC DISPLAY OF OR THROUGH USE  OF THIS  SOURCE CODE  WITHOUT
+// THE EXPRESS WRITTEN CONSENT OF SYMVIONICS, Inc. IS STRICTLY PROHIBITED, AND IN
+// VIOLATION OF APPLICABLE LAWS AND INTERNATIONAL TREATIES.  THE RECEIPT OR
+// POSSESSION OF THIS SOURCE CODE AND/OR RELATED INFORMATION DOES NOT CONVEY OR
+// IMPLY ANY RIGHTS TO REPRODUCE, DISCLOSE OR DISTRIBUTE ITS CONTENTS, OR TO
+// MANUFACTURE, USE, OR SELL ANYTHING THAT IT  MAY DESCRIBE, IN WHOLE OR IN PART.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+//Common interfaces ( other interfaces are derived from these )
+
+[
+	uuid(7CC20E62-02CE-4774-84AC-9B5D10929B48)
+]
+//This has to match stMeasurementInputDataType but I'm pulling entries that are stupid, redundant or not supported yet
+typedef enum 
+{	
+  UNSIGNED_BINARY = 0, 
+  UNSIGNED_BINARY_64 = 1,
+  SIGN_MAGNITUDE = 2,
+  BCD = 3,
+  TWOS_COMPLEMENT = 4, 
+  TWOS_COMPLEMENT_64 = 5,
+  ASCII = 6, 
+  //DISCRETE= 7,
+  FLOAT_TYPE = 8,
+  DOUBLE_TYPE = 9,
+  BLOB_TYPE = 10,
+  NO_INPUT_TYPE = 11, //ugh -- this should have been first, now I have to keep at as '11' forever... sigh...
+  UNSIGNED_BINARY_16 = 12,
+  TWOS_COMPLEMENT_16 = 13,
+  T1750_32_TYPE = 14
+} MeasurementInputDataType;
+
+ [
+   uuid (F83EB0B0-B4BC-4aec-B2AD-3B69D27A409A)
+ ]
+ //This has to match tConfigDerivedType<>DERIVED_TYPE so don't change it without changing the other
+ typedef enum
+ {
+   STANDARD_DERIVED = 0,
+   IAP_DERIVED = 1
+ } DerivedTypeEnum;
+
+[
+	object,
+	uuid(684FD486-DB19-492E-9177-F1EC1172C05D),
+	dual,
+	nonextensible,
+	helpstring("IDataConversion Interface"),
+	pointer_default(unique)
+]
+interface IDataConversion : IDispatch{
+  [propget, id(1), helpstring("Derived Type")] HRESULT DerivedType([out, retval] DerivedTypeEnum *pVal );
+  [propput, id(1), helpstring("Derived Type")] HRESULT DerivedType([in] DerivedTypeEnum pVal );
+  };
+[
+	object,
+	uuid(F59F9BF6-B8E6-4EC6-AEF3-C889548E4782),
+	dual,
+	nonextensible,
+	helpstring("IDataConversionIadsEquation Interface"),
+	pointer_default(unique)
+]
+interface IDataConversionIadsEquation : IDataConversion {
+  [propget, id(101), helpstring("IadsDerivedEquation")] HRESULT IadsDerivedEquation([out, retval] BSTR* pVal);
+  [propput, id(101), helpstring("IadsDerivedEquation")] HRESULT IadsDerivedEquation([in] BSTR newVal);
+  [propget, id(102), helpstring("Trigger Parameter")] HRESULT TriggerParameter([out,retval] BSTR *pVal );
+  [propput, id(102), helpstring("Trigger Parameter")] HRESULT TriggerParameter([in] BSTR pVal );
+  [propget, id(103), helpstring( "IADS Output Data Type")] HRESULT OutputDataType( [out,retval]  MeasurementInputDataType *pVal );
+  [propput, id(103), helpstring( "IADS Output Data Type")] HRESULT OutputDataType( [in]  MeasurementInputDataType newVal );
+};
+[
+	object,
+	uuid(D4545533-F3DF-4c70-9CF6-C510D9A01419),
+	dual,
+	helpstring("ICommonMeasurement Interface"),
+	pointer_default(unique)
+]
+interface ICommonMeasurement : IDispatch{
+	[propget, id(1), helpstring("Measurement Name -- this cooresponds to IADS parameter name")] HRESULT Name([out, retval] BSTR* pVal); //Measurement Name -- this cooresponds to IADS parameter name
+	[propput, id(1), helpstring("Measurement Name -- this cooresponds to IADS parameter name")] HRESULT Name([in] BSTR newVal); //Measurement Name -- this cooresponds to IADS parameter name
+	[propget, id(2), helpstring("Measurement Short Name, also known as the TMATS 'Alias' field")] HRESULT ShortName([out, retval] BSTR* pVal); //Measurement Short Name, also known as the TMATS 'Alias' field
+	[propput, id(2), helpstring("Measurement Short Name, also known as the TMATS 'Alias' field")] HRESULT ShortName([in] BSTR newVal);//Measurement Short Name, also known as the TMATS 'Alias' field
+	[propget, id(3), helpstring("Measurement Long Name, also known as the TMATS 'Description' field")] HRESULT LongName([out, retval] BSTR* pVal);//Measurement Long Name, also known as the TMATS 'Description' field
+  [propput, id(3), helpstring("Measurement Long Name, also known as the TMATS 'Description' field")] HRESULT LongName([in] BSTR newVal);//Measurement Long Name, also known as the TMATS 'Description' field
+	[propget, id(4), helpstring("Units")] HRESULT Units([out, retval] BSTR* pVal);
+	[propput, id(4), helpstring("Units")] HRESULT Units([in] BSTR newVal);
+	[propget, id(5), helpstring("IADS Group")] HRESULT Group([out, retval] BSTR* pVal);		//IADS Group	
+	[propput, id(5), helpstring("IADS Group")] HRESULT Group([in] BSTR newVal); //IADS Group					       
+	[propget, id(6), helpstring("IADS SubGroup")] HRESULT SubGroup([out, retval] BSTR* pVal);		//IADS SubGroup
+	[propput, id(6), helpstring("IADS SubGroup")] HRESULT SubGroup([in] BSTR newVal);	//IADS SubGroup
+  [propget, id(7), helpstring("Measurement Input Data Type")] HRESULT InputDataType([out, retval] MeasurementInputDataType* pVal);
+	[propput, id(7), helpstring("Measurement Input Data Type")] HRESULT InputDataType([in] MeasurementInputDataType newVal);
+  [propget, id(8), helpstring("Data Conversion")] HRESULT DataConversion([out, retval] IDataConversion** pVal); //Data conversion defines how translate raw data into engineering units.
+	[propput, id(8), helpstring("Data Conversion")] HRESULT DataConversion([in] IDataConversion* newVal); //Data conversion defines how translate raw data into engineering units.
+  [propget, id(9), helpstring("Parameter Defaults")] HRESULT ParameterDefaults([out, retval] BSTR *pVal );
+  [propput, id(9), helpstring("Parameter Defaults")] HRESULT ParameterDefaults([in] BSTR newVal );
+  [propget, id(10), helpstring("Warning Threshold Minimum")] HRESULT WarningThresholdMinimum([out, retval] DOUBLE *pVal );
+  [propput, id(10), helpstring("Warning Threshold Minimum")] HRESULT WarningThresholdMinimum([in] DOUBLE newVal );
+  [propget, id(11), helpstring("Warning Threshold Maximum")] HRESULT WarningThresholdMaximum([out, retval] DOUBLE *pVal );
+  [propput, id(11), helpstring("Warning Threshold Maximum")] HRESULT WarningThresholdMaximum([in] DOUBLE newVal );
+  [propget, id(12), helpstring("Alarm Threshold Minimum")] HRESULT AlarmThresholdMinimum([out, retval] DOUBLE *pVal );
+  [propput, id(12), helpstring("Alarm Threshold Minimum")] HRESULT AlarmThresholdMinimum([in] DOUBLE newVal );
+  [propget, id(13), helpstring("Alarm Threshold Maximum")] HRESULT AlarmThresholdMaximum([out, retval] DOUBLE *pVal );
+  [propput, id(13), helpstring("Alarm Threshold Maximum")] HRESULT AlarmThresholdMaximum([in] DOUBLE newVal );
+  [propget, id(14), helpstring("RangeMinimum")] HRESULT RangeMinimum([out, retval] DOUBLE *pVal );
+  [propput, id(14), helpstring("RangeMinimum")] HRESULT RangeMinimum([in] DOUBLE newVal );
+  [propget, id(15), helpstring("RangeMaximum")] HRESULT RangeMaximum([out, retval] DOUBLE *pVal );
+  [propput, id(15), helpstring("RangeMaximum")] HRESULT RangeMaximum([in] DOUBLE newVal );
+  [propget, id(16), helpstring("PropertyBag")] HRESULT IadsPropertyBagString([out, retval] BSTR *pVal ); //KR: added 9.2.1
+  [propput, id(16), helpstring("PropertyBag")] HRESULT IadsPropertyBagString([in] BSTR newVal );
+};
+[
+	object,
+	uuid(DA50F4FB-F49A-462C-A48A-374260AED2F4),
+	dual,
+	nonextensible,
+	helpstring("ICalibrationInformation Interface"),
+	pointer_default(unique)
+]
+interface ICalibrationInformation : IDispatch {
+  [propget, id(1), helpstring("Model Number")] HRESULT ModelNumber([out, retval] BSTR *pVal );
+  [propput, id(1), helpstring("Model Number")] HRESULT ModelNumber([in] BSTR newVal );
+  [propget, id(2), helpstring("Serial Number")] HRESULT SerialNumber([out, retval] BSTR *pVal );
+  [propput, id(2), helpstring("Serial Number")] HRESULT SerialNumber([in] BSTR newVal );
+  [propget, id(3), helpstring("Date Created")] HRESULT OriginationDate([out, retval] BSTR *pVal );
+  [propput, id(3), helpstring("Date Created")] HRESULT OriginationDate([in] BSTR newVal );
+  [propget, id(4), helpstring("POC Name")] HRESULT POCName([out, retval] BSTR *pVal );
+  [propput, id(4), helpstring("POC Name")] HRESULT POCName([in] BSTR newVal );
+  [propget, id(5), helpstring("POC Telephone Number")] HRESULT POCTelephoneNumber([out, retval] BSTR *pVal );
+  [propput, id(5), helpstring("POC Telephone Number")] HRESULT POCTelephoneNumber([in] BSTR newVal );
+  [propget, id(6), helpstring("POC Agency")] HRESULT POCAgency([out, retval] BSTR *pVal );
+  [propput, id(6), helpstring("POC Agency")] HRESULT POCAgency([in] BSTR newVal );
+  [propget, id(7), helpstring("POC Address")] HRESULT POCAddress([out, retval] BSTR *pVal );
+  [propput, id(7), helpstring("POC Address")] HRESULT POCAddress([in] BSTR newVal );
+  [propget, id(8), helpstring("safearray of integers representing the raw values for the end-to-end calibration")] HRESULT RawValues([out, retval] VARIANT *pVal );
+  [propput, id(8), helpstring("safearray of integers representing the raw values for the end-to-end calibration")] HRESULT RawValues([in] VARIANT newVal );
+  [propget, id(9), helpstring("safearray of doubles representing the raw values for the end-to-end calibration")] HRESULT EUValues([out, retval] VARIANT *pVal );
+  [propput, id(9), helpstring("safearray of doubles representing the raw values for the end-to-end calibration")] HRESULT EUValues([in] VARIANT newVal );
+  [id(10)] HRESULT ClearCalibrationTable(void);
+  [id(11)] HRESULT AddCalibrationPair( [in] int index, [in] int rawValue, [in] double euValue );
+
+  };
+
+[
+	object,
+	uuid(1EAEB9C1-5F0E-481E-B99F-9976CA6419D6),
+	dual,
+	nonextensible,
+	helpstring("IDerivedMeasurement Interface"),
+	pointer_default(unique)
+]
+interface IDerivedMeasurement : ICommonMeasurement {
+  [propget, id(101), helpstring("The measurement name to use in the data conversion. Only use this if you don't have a ICommonMeasurement to set ParentMeasurement to.")] HRESULT ParentMeasurementName([out, retval] BSTR* pVal); //The measurement name to use in the data conversion. Only use this if you don't have a ICommonMeasurement to set ParentMeasurement to.
+  [propput, id(101), helpstring("The measurement name to use in the data conversion. Only use this if you don't have a ICommonMeasurement to set ParentMeasurement to.")] HRESULT ParentMeasurementName([in] BSTR newVal); //The measurement name to use in the data conversion. Only use this if you don't have a ICommonMeasurement to set ParentMeasurement to.
+  [propget, id(102), helpstring("The measurement to use as a source in the data conversion.")] HRESULT ParentMeasurement([out, retval] ICommonMeasurement ** pVal); //The measurement to use as a source in the data conversion.
+  [propput, id(102), helpstring("The measurement to use as a source in the data conversion.")] HRESULT ParentMeasurement([in] ICommonMeasurement * newVal); //The measurement to use as a source in the data conversion.
+  [propget, id(103), helpstring("The measurement to use as a source in the data conversion.")] HRESULT Calibration([out, retval] ICalibrationInformation ** pVal); //The measurement to use as a source in the data conversion.
+  [propput, id(103), helpstring("The measurement to use as a source in the data conversion.")] HRESULT Calibration([in] ICalibrationInformation * newVal); //The measurement to use as a source in the data conversion.
+};
+
+[
+	object,
+	uuid(7AE77FA0-C449-433e-A0BF-3A048D9DF093),
+	dual,
+	nonextensible,
+	helpstring("IPluginMeasurement Interface"),
+	pointer_default(unique)
+]
+interface IPluginMeasurement : ICommonMeasurement {
+  [propget, id(101), helpstring("Sample Rate for Measurement. Use 0 for aperiodic.")] HRESULT SampleRate([out, retval] DOUBLE *pVal );
+  [propput, id(101), helpstring("Sample Rate for Measurement. Use 0 for aperiodic.")] HRESULT SampleRate([in] DOUBLE pVal );
+  [propget, id(102), helpstring("Blob size for Blob Type Measurement.")] HRESULT BlobSizeInBytes([out, retval] LONG *pVal );
+  [propput, id(102), helpstring("Blob size for Blob Type Measurement.")] HRESULT BlobSizeInBytes([in] LONG pVal );
+
+};
+[
+	object,
+	uuid(75868CE6-C9A3-416E-AFC3-A1108B58093A),
+	dual,
+	nonextensible,
+	helpstring("IBasicMeasurement Interface"),
+	pointer_default(unique)
+]
+interface IBasicMeasurement : IPluginMeasurement{
+};
+
+
+//Generic:
+[
+	object,
+	uuid(40448E38-B58A-4229-B0B0-AEB72C0661BE),
+	dual,
+  nonextensible,
+	helpstring("ICommonDataStream Interface"),
+	pointer_default(unique)
+]
+interface ICommonDataStream : IDispatch {
+    //[propget, id(1), helpstring("Number of properties within this bag")] HRESULT Count( [out, retval] long* pVal );
+  [propget, id(DISPID_NEWENUM), helpstring("Enumeration of ICommonMeasurements. If you're using C#, you'll need to cast object to appropriate measurement type ( CArincMeasurement, CPCMMeasurement, etc ), in order to use it.")] HRESULT _NewEnum( [out, retval] IUnknown** pVal ); //Enumeration of ICommonMeasurements. If you're using C#, you'll need to cast object to appropriate measurement type ( CArincMeasurement, CPCMMeasurement, etc ), in order to use it.
+  [propget, id(1), helpstring("Data Stream Name")] HRESULT Name([out, retval] BSTR* pVal);
+  [propput, id(1), helpstring("Data Stream Name")] HRESULT Name([in] BSTR newVal);
+  [propget, id(2), helpstring("Num of measurements")] HRESULT NumMeasurements([out,retval] ULONG *);
+  [id(3), helpstring("Adds ICommonMeasurement to internal list. ICommonMeasurement must have a unique name set already.")] HRESULT addMeasurement([in] ICommonMeasurement  * meas); //Adds ICommonMeasurement to internal list. ICommonMeasurement must have a unique name set already.
+  [id(4), helpstring("Removes ICommonMeasurement from internal list.")] HRESULT removeMeasurement([in] BSTR name);//Removes ICommonMeasurement from internal list.
+  [id(5), helpstring("Removes all measurements from internal list.")] HRESULT removeAllMeasurements([in] void );//Removes all measurements from internal list.
+};
+
+[
+	object,
+	uuid(1F74650C-1FA4-42c4-9BE8-C03213E2FD94),
+	dual,
+  nonextensible,
+	helpstring("IIadsTppPluginDataStream Interface"),
+	pointer_default(unique)
+]
+interface IIadsTppPluginDataStream : ICommonDataStream {
+  /**
+  Declare the sample rate of time. Use 0 for aperiodic time. 
+  Use only in Init() function.
+  */
+  [propget, id(101), helpstring("Sample Rate of Time")] HRESULT TimeSampleRate([out, retval] DOUBLE *pVal );
+  [propput, id(101), helpstring("Sample Rate of Time")] HRESULT TimeSampleRate([in] DOUBLE pVal );
+  [id(106), helpstring("PutTime")] HRESULT PutTime([in] LONGLONG iadsTime);
+  /**
+  Return data for a given measurement to IadsTpp.
+  Use after Init function has been invoked.
+  */
+  [id(107), helpstring("PutData")] HRESULT PutData( [in] IPluginMeasurement *meas, [in] VARIANT data);
+  /**
+  Define TPP measurement. Use only in Init() function.
+  */
+ // [id(108), helpstring("Adds IPluginMeasurement to internal list. IPluginMeasurement must have a unique name set already.")] HRESULT AddPluginMeasurement([in] IPluginMeasurement  * meas); //Adds ICommonMeasurement to internal list. ICommonMeasurement must have a unique name set already.
+  [id(109), helpstring( "CreateBasicMeasurement")] HRESULT CreateBasicMeasurement([in] BSTR name, [in] BSTR shortName, [in] BSTR longName, [in] BSTR units, [in] MeasurementInputDataType dt, [in] DOUBLE sampleRate, [out,retval] IPluginMeasurement **pVal );
+  /**
+  Defint derived measurement. Use only in Init() function.
+  */
+  [id(110), helpstring( "CreateDerivedMeasurement")] HRESULT CreateDerivedMeasurement([in] BSTR name, [in] BSTR shortName, [in] BSTR longName, [in] BSTR units, [in] MeasurementInputDataType outputDataType, [in] DOUBLE sampleRate, [in] BSTR iadsEquation, [in] DerivedTypeEnum derivedType, [out,retval] IDerivedMeasurement **pVal );
+  /**
+  Send a message to the IadsTpp log files. Please use this sparingly as it can impede performance. Can be used at any time.
+  */
+  [id(111), helpstring( "AddMessageToLog" )] HRESULT AddMessageToLog([in] BSTR message );
+};
+
+[
+	object,
+	uuid(89305F9F-B19A-44df-90AD-1C6707A811F8),
+	dual,
+  nonextensible,
+	helpstring("IIadsTppUDPPluginDataStream Interface"),
+	pointer_default(unique)
+]
+interface IIadsTppUDPPluginDataStream : IIadsTppPluginDataStream {
+  [id(150), helpstring("AddPacketDefinition")] HRESULT AddPacketDefinition([in] BSTR packetName, [in] DOUBLE packetRate, [in] LONG maxPacketSize, [in] BSTR destinationAddress, [in] USHORT portId, [out,retval] LONG *packetNumber );
+};
+
+[
+	object,
+	uuid(30E8E3C2-8BB5-4ef6-99C5-5169D5366ABB),
+	dual,
+  nonextensible,
+	helpstring("IIadsTppUDPPlugin Interface"),
+	pointer_default(unique)
+]
+interface IIadsTppUDPPlugin : IDispatch {
+  [propget, id(101), helpstring("Data Stream Name")] HRESULT DataSourceName([out, retval] BSTR* pVal);
+  [propput, id(101), helpstring("Data Stream Name")] HRESULT DataSourceName([in] BSTR newVal);
+  [id(102), helpstring("Initialize the plugin. Add packet definitions here.")] HRESULT Init( [in]IIadsTppUDPPluginDataStream *dataStream );
+  [id(103), helpstring("Send data back to IadsTpp")] HRESULT ProcessData([in]IIadsTppUDPPluginDataStream *dataStream, [in] VARIANT data, [in] LONG packageSize );
+};
+
+[
+	object,
+	uuid(03651CB0-8146-4b16-88EF-BE7B54FCF2A4),
+	dual,
+  nonextensible,
+	helpstring("IIadsTppUDPPluginDataStream Interface"),
+	pointer_default(unique)
+]
+interface IIadsTppCh10PluginDataStream : IIadsTppPluginDataStream {
+  /** 
+  This will convert relative Chapter 10 time (like intrapacket time ) to IADS time format so it can be passed back to IadsTpp.
+  */
+  [id(200), helpstring("Turn Ch10 time into IADS time")] HRESULT CalcIadsTimeFromCh10Time( [in] LONGLONG ch10Time, [out,retval] LONGLONG *iadsTime );
+  /**
+  Clear all address filters
+  */
+  [id(201), helpstring("Clear all address filters")] HRESULT ClearEthChannelFilters(void);
+  /**
+  Add addresses to filter against so that not all Ethernet packets are returned to you.
+  */
+  [id(202), helpstring("Filter by destination port")] HRESULT AddEthChannelFilterByDestPort([in] USHORT pval);
+  [id(203), helpstring("Filter by source port")] HRESULT AddEthChannelFilterBySrcPort([in] USHORT pval);
+
+};
+/**Well this was a nice idea but there's no way to implement it without forcing a change to COM_MAP in existing code (not all of which is under our installers ) 
+which means breaking the interface so.. not worth it. Also not sure how this would impact non-C++ users. As I recall C# forces you to downcast to specific 
+interface to get the right functions so that's a pisser too. Better to eat it on my end and support 2 interfaces via templates.
+*/
+/**
+[
+	object,
+	uuid(E0F72639-7C9F-47f5-8192-2AE020F707AA),
+	dual,
+  nonextensible,
+	helpstring("IIadsTppCh10PluginBase Interface"),
+	pointer_default(unique)
+]
+interface IIadsTppCh10PluginBase : IDispatch {
+//  Returns a brief descriptive name for your plugin. This may be used to generate parameter names so avoid white space if you can. 
+  [propget, id(101), helpstring("Data Stream Name")] HRESULT DataSourceName([out, retval] BSTR* pVal);
+  [propput, id(101), helpstring("Data Stream Name")] HRESULT DataSourceName([in] BSTR newVal);
+//  This is called once before data processing begins. This is where you should generated and add your measurements to the incoming data stream. 
+//  Also any memory allocation should occur here and be cleaned up in your object's FinalRelease() method.
+//  Avoid allocating, deallocating or reallocating memory during the ProcessCh10Packet function.
+  [id(102), helpstring("Initialize the plugin. Add measurement definitions here.")] HRESULT Init( [in]IIadsTppCh10PluginDataStream *dataStream, ULONG packetId );
+  //do not use id(103) and id(104) -- for legacy reasons that goes to IIadsTppCh10Plugin 
+};
+*/
+
+[
+	object,
+	uuid(B14A7352-45CF-464d-86E1-83ACDF00B140),
+	dual,
+  nonextensible,
+	helpstring("IIadsTppCh10Plugin Interface"),
+	pointer_default(unique)
+]
+interface IIadsTppCh10Plugin : IDispatch {
+//  Returns a brief descriptive name for your plugin. This may be used to generate parameter names so avoid white space if you can. 
+  [propget, id(101), helpstring("Data Stream Name")] HRESULT DataSourceName([out, retval] BSTR* pVal);
+  [propput, id(101), helpstring("Data Stream Name")] HRESULT DataSourceName([in] BSTR newVal);
+//  This is called once before data processing begins. This is where you should generated and add your measurements to the incoming data stream. 
+//  Also any memory allocation should occur here and be cleaned up in your object's FinalRelease() method.
+//  Avoid allocating, deallocating or reallocating memory during the ProcessCh10Packet function.
+  [id(102), helpstring("Initialize the plugin. Add measurement definitions here.")] HRESULT Init( [in]IIadsTppCh10PluginDataStream *dataStream, ULONG packetId );
+
+   /**
+  The processing engine for your plugin : Chapter 10 packets come in and you use the PutTime and PutData functions to pass time and data back to IadsTpp.  Please note that time should be monotonically increasing.  Whatever data is returned in the PutData function is associated with the preceding PutTime function call.
+  */
+  [id(103), helpstring("Send data back to IadsTpp")] HRESULT ProcessCh10Packet([in]IIadsTppCh10PluginDataStream *dataStream, [in] VARIANT data, [in] LONG packageSize, [in] LONGLONG iadsTimeFromHeader);
+ 
+  /**
+  Return the IRIG-106 Chapter 10 packet type that applies to this plugin. ( Please see IRIG documentation for details. )
+  This will be used when the recorder's TMATS file is read to map your plugin to appropriate channel types.
+  */
+  [propget, id(104), helpstring("Channel Type")] HRESULT Ch10PacketType([out,retval] ULONG *pval);
+
+};
+
+[
+	object,
+	uuid(475D547C-2BEB-4cf2-806E-204E70B09087),
+	dual,
+  nonextensible,
+	helpstring("IIadsTppCh10EthernetPlugin Interface"),
+	pointer_default(unique)
+]
+interface IIadsTppCh10EthernetPlugin : IDispatch {
+//  Returns a brief descriptive name for your plugin. This may be used to generate parameter names so avoid white space if you can. 
+  [propget, id(101), helpstring("Data Stream Name")] HRESULT DataSourceName([out, retval] BSTR* pVal);
+  [propput, id(101), helpstring("Data Stream Name")] HRESULT DataSourceName([in] BSTR newVal);
+//  This is called once before data processing begins. This is where you should generated and add your measurements to the incoming data stream. 
+//  Also any memory allocation should occur here and be cleaned up in your object's FinalRelease() method.
+//  Avoid allocating, deallocating or reallocating memory during the ProcessCh10Packet function.
+  [id(102), helpstring("Initialize the plugin. Add measurement definitions here.")] HRESULT Init( [in]IIadsTppCh10PluginDataStream *dataStream, ULONG packetId );
+
+  //Custom to Ethernet: 
+   /**
+  The processing engine for your plugin : Chapter 10 packets come in and you use the PutTime and PutData functions to pass time and data back to IadsTpp.  Please note that time should be monotonically increasing.  Whatever data is returned in the PutData function is associated with the preceding PutTime function call.
+  */
+  [id(200), helpstring("Send data back to IadsTpp")] HRESULT ProcessEthernetPayload([in]IIadsTppCh10PluginDataStream *dataStream, [in] VARIANT data, [in] LONG packetSize, [in] LONGLONG iadsTimeForPacket );
+
+};
+
+[
+  object,
+  uuid(2D0C1A34-D1D0-4503-8089-4A405997B1CF),
+  dual,
+  nonextensible,
+  helpstring("IIadsTppCh10EthernetPlugin2 Interface"),
+  pointer_default(unique)
+]
+interface IIadsTppCh10EthernetPlugin2 : IIadsTppCh10EthernetPlugin 
+{
+  [id(301), helpstring("Send data back to IadsTpp")] HRESULT ProcessEthernetPayloadMultiChannel([in]IIadsTppCh10PluginDataStream *dataStream, [in] VARIANT data, [in] LONG packetSize, [in] LONGLONG iadsTimeForPacket, [in] LONG packetId );
+  [propget, id(302), helpstring("Indicate if this plugin supports multiple channel")] HRESULT SupportsMultiChannel( [out,retval] VARIANT_BOOL *doesSupport );
+
+};
+
+[
+	object,
+	uuid(76C36191-FDE4-40CD-82BB-049C1B63524A),
+	dual,
+	nonextensible,
+	helpstring("IDataSourceSet Interface"),
+	pointer_default(unique)
+]
+interface IDataSourceSet : IDispatch{
+  [propget, id(DISPID_NEWENUM), helpstring("Enumeration of data streams (ICommonDataStream ) attached to this data set. If you're using C#, you'll need to cast object to ICommonDataStream to use it.")] HRESULT _NewEnum( [out, retval] IUnknown** pVal ); 
+  [id(1), helpstring("Write data streams to a TMATS file.")] HRESULT writeToTMATS([in] BSTR outFileName); //Write data streams to a TMATS file.
+  [id(2), helpstring("Add data stream that derives from ICommonDataStream  to the data set")] HRESULT addDataStream([in] ICommonDataStream * dataStream); //Add data stream that derives from ICommonDataStream  to the data set
+  [id(3), helpstring("Read data streams from a TMATS file")] HRESULT readFromTMATS([in] BSTR fileName); //Add data stream that derives from ICommonDataStream  to the data set
+  [propget,id(4), helpstring("Program Name")] HRESULT Name([out, retval] BSTR *pVal); 
+  [propput,id(4), helpstring("Program Name")] HRESULT Name([in] BSTR newVal); 
+  [id(5), helpstring("Add informative message to import log")] HRESULT addInfoToImportLog([in] BSTR message); //Add informative message to import log
+  [id(6), helpstring("Add warning message to import log")] HRESULT addWarningToImportLog([in] BSTR message ); //Add warning message to import log
+  [id(7), helpstring("Add error message to import log")] HRESULT addErrorToImportLog([in] BSTR message ); //"Add error message to import log"
+  [id(8), helpstring("Start import log")] HRESULT startImportLog( [in] BSTR f); //"Start import log"
+  [id(9), helpstring("Close import log")] HRESULT closeImportLog(); //Close import log
+  [propget,id(10), helpstring("Num Import Warnings")] HRESULT NumImportWarnings( [out,retval] int *);
+  [propget,id(11), helpstring("Num Import Errors")] HRESULT NumImportErrors( [out,retval] int *);
+};
+
+[
+	object,
+	uuid(59334E79-8527-4221-9636-126F2B2F2AE4),
+	dual,
+	nonextensible,
+	helpstring("IDataSourceSetImporter Interface"),
+	pointer_default(unique)
+]
+interface IDataSourceSetImporter : IDispatch{
+  [propget, id(1), helpstring("Name that will appear in Measurement Editor list")] HRESULT ImporterName([out,retval] BSTR *importerName); //Name that will appear in Measurement Editor list
+  [id(2), helpstring("Passes in filename to import. Returns IDataSourceSet.")] HRESULT ImportFile([in] BSTR filename,  [in] IDataSourceSet *dataStream); //Passes in filename to import and IDataSourceSet to import to.
+  [propget, id(3), helpstring("Percent complete")] HRESULT PercentComplete([out,retval] DOUBLE *percent); //Percent complete
+  [id(4), helpstring("Cancel import." )] HRESULT Cancel( void );
+};
+
+
+[
+	object,
+	uuid(4C5EACAA-426B-41ff-8625-71A643321A3E),
+	dual,
+	nonextensible,
+	helpstring("ISupportInPlaceImport Interface"),
+	pointer_default(unique)
+]
+interface ISupportInPlaceImport : IDispatch{
+  [id(1), helpstring("Is this file the right type?")] HRESULT IsCorrectFileType([in] BSTR filename, [out,retval] VARIANT_BOOL *is_file_type); //Is this file the right  type? 
+};
+
+[
+	uuid(A379F3BC-6D7F-44d0-9F64-3E5D9D355667),
+	version(1.0),
+	helpstring("IadsTpp Common Interface 1.0 Type Library")
+]
+library IadsTppCommonLib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+  interface ICommonMeasurement;
+  interface ICommonDataStream;
+  interface IIadsTppPluginDataStream;
+  interface IIadsTppUDPPluginDataStream;
+  interface IIadsTppUDPPlugin;
+  interface IIadsTppCh10PluginDataStream;
+  //interface IIadsTppCh10PluginBase;
+  interface IIadsTppCh10Plugin;
+  interface IIadsTppCh10EthernetPlugin;
+  interface IPluginMeasurement;
+  interface IDataConversion;
+  interface IDataConverionIadsEquation;
+  interface IDerivedMeasurement;
+  interface IDataSourceSetImporter;
+  interface ISupportInPlaceImport;
+  interface IDataSourceSet;
+  interface IIadsTppCh10EthernetPlugin2;
+};

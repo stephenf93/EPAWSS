@@ -1,0 +1,108 @@
+// EPAWSS.idl : IDL source for EPAWSS
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (EPAWSS.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(89547703-dcff-4d2a-af9f-b5f24b56429c),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IRXTX : IDispatch
+{
+};
+[
+	object,
+	uuid(14f0a213-0be7-449f-9298-eb7e2fef6a21),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IRX : IDispatch
+{
+};
+[
+	object,
+	uuid(6ac91f39-cc59-46ae-9a92-12f65b9599b1),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface ITX : IDispatch
+{
+};
+[
+	object,
+	uuid(66eaaf55-121a-4345-a155-428a1b6ce6db),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IRXdual : IDispatch
+{
+};
+[
+	object,
+	uuid(a95e78d6-043b-4fe3-b84a-d5a336877717),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface ITXdual : IDispatch
+{
+};
+[
+	uuid(f10668f0-2ac8-4017-8442-7fce34b1917d),
+	version(1.0),
+]
+library EPAWSSLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(beb76f1a-21a9-4e26-8fae-2c240b095fac)
+	]
+	coclass RXTX
+	{
+		[default] interface IRXTX;
+	};
+	[
+		uuid(694c6bb3-61d3-4d7b-9ce1-47bb4b140829)
+	]
+	coclass RX
+	{
+		[default] interface IRX;
+	};
+	[
+		uuid(e2fbe867-1058-4034-9f4a-6ffe4052dd8c)
+	]
+	coclass TX
+	{
+		[default] interface ITX;
+	};
+	[
+		uuid(335cd8db-719f-4ac8-9a0c-e51bdb1c8367)
+	]
+	coclass RXdual
+	{
+		[default] interface IRXdual;
+	};
+	[
+		uuid(4100beb4-7645-43ad-a280-66e14a1b2519)
+	]
+	coclass TXdual
+	{
+		[default] interface ITXdual;
+	};
+};
+
+import "shobjidl.idl";
+import "shobjidl.idl";
+import "shobjidl.idl";
+import "shobjidl.idl";
+import "shobjidl.idl";

@@ -1,0 +1,48 @@
+HKCR
+{
+	EPAWSS.TX_dual.1 = s 'TXdual class'
+	{
+		CLSID = s '{4100beb4-7645-43ad-a280-66e14a1b2519}'
+	}
+	EPAWSS.TX_dual = s 'TXdual class'
+	{		
+		CurVer = s 'EPAWSS.TX_dual.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {4100beb4-7645-43ad-a280-66e14a1b2519} = s 'TXdual class'
+		{
+			ProgID = s 'EPAWSS.TX_dual.1'
+			VersionIndependentProgID = s 'EPAWSS.TX_dual'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Free'
+			}
+			TypeLib = s '{f10668f0-2ac8-4017-8442-7fce34b1917d}'
+			Version = s '1.0'
+		}
+	}
+}
+HKEY_LOCAL_MACHINE
+{
+	NoRemove SOFTWARE
+	{
+		NoRemove 'Symvionics, Inc.'
+		{
+			NoRemove IADS
+			{
+				NoRemove IadsTpp
+				{
+					NoRemove Plugins
+					{
+						ForceRemove EPAWSS.TX_dual
+						{
+						val Version = s '8.1.6'
+						}
+					}					
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,48 @@
+HKCR
+{
+	EPAWSS.TX.1 = s 'TX class'
+	{
+		CLSID = s '{e2fbe867-1058-4034-9f4a-6ffe4052dd8c}'
+	}
+	EPAWSS.TX = s 'TX class'
+	{		
+		CurVer = s 'EPAWSS.TX.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {e2fbe867-1058-4034-9f4a-6ffe4052dd8c} = s 'TX class'
+		{
+			ProgID = s 'EPAWSS.TX.1'
+			VersionIndependentProgID = s 'EPAWSS.TX'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Free'
+			}
+			TypeLib = s '{f10668f0-2ac8-4017-8442-7fce34b1917d}'
+			Version = s '1.0'
+		}
+	}
+}
+HKEY_LOCAL_MACHINE
+{
+	NoRemove SOFTWARE
+	{
+		NoRemove 'Symvionics, Inc.'
+		{
+			NoRemove IADS
+			{
+				NoRemove IadsTpp
+				{
+					NoRemove Plugins
+					{
+						ForceRemove EPAWSS.TX
+						{
+						val Version = s '8.1.6'
+						}
+					}					
+				}
+			}
+		}
+	}
+}

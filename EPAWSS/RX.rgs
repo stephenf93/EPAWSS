@@ -1,0 +1,48 @@
+HKCR
+{
+	EPAWSS.RX.1 = s 'RX class'
+	{
+		CLSID = s '{694c6bb3-61d3-4d7b-9ce1-47bb4b140829}'
+	}
+	EPAWSS.RX = s 'RX class'
+	{		
+		CurVer = s 'EPAWSS.RX.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {694c6bb3-61d3-4d7b-9ce1-47bb4b140829} = s 'RX class'
+		{
+			ProgID = s 'EPAWSS.RX.1'
+			VersionIndependentProgID = s 'EPAWSS.RX'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Free'
+			}
+			TypeLib = s '{f10668f0-2ac8-4017-8442-7fce34b1917d}'
+			Version = s '1.0'
+		}
+	}
+}
+HKEY_LOCAL_MACHINE
+{
+	NoRemove SOFTWARE
+	{
+		NoRemove 'Symvionics, Inc.'
+		{
+			NoRemove IADS
+			{
+				NoRemove IadsTpp
+				{
+					NoRemove Plugins
+					{
+						ForceRemove EPAWSS.RX
+						{
+						val Version = s '8.1.6'
+						}
+					}					
+				}
+			}
+		}
+	}
+}

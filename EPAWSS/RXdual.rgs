@@ -1,0 +1,48 @@
+HKCR
+{
+	EPAWSS.RX_dual.1 = s 'RXdual class'
+	{
+		CLSID = s '{335cd8db-719f-4ac8-9a0c-e51bdb1c8367}'
+	}
+	EPAWSS.RX_dual = s 'RXdual class'
+	{		
+		CurVer = s 'EPAWSS.RX_dual.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {335cd8db-719f-4ac8-9a0c-e51bdb1c8367} = s 'RXdual class'
+		{
+			ProgID = s 'EPAWSS.RX_dual.1'
+			VersionIndependentProgID = s 'EPAWSS.RX_dual'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Free'
+			}
+			TypeLib = s '{f10668f0-2ac8-4017-8442-7fce34b1917d}'
+			Version = s '1.0'
+		}
+	}
+}
+HKEY_LOCAL_MACHINE
+{
+	NoRemove SOFTWARE
+	{
+		NoRemove 'Symvionics, Inc.'
+		{
+			NoRemove IADS
+			{
+				NoRemove IadsTpp
+				{
+					NoRemove Plugins
+					{
+						ForceRemove EPAWSS.RX_dual
+						{
+						val Version = s '8.1.6'
+						}
+					}					
+				}
+			}
+		}
+	}
+}

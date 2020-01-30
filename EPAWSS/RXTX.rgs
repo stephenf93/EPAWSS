@@ -1,0 +1,48 @@
+HKCR
+{
+	EPAWSS.RXTX.1 = s 'RXTX class'
+	{
+		CLSID = s '{1ffaaa65-1a81-4057-a6c7-c63ba93e67c1}'
+	}
+	EPAWSS.RXTX = s 'RXTX class'
+	{		
+		CurVer = s 'EPAWSS.RXTX.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {1ffaaa65-1a81-4057-a6c7-c63ba93e67c1} = s 'RXTX class'
+		{
+			ProgID = s 'EPAWSS.RXTX.1'
+			VersionIndependentProgID = s 'EPAWSS.RXTX'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Free'
+			}
+			TypeLib = s '{f10668f0-2ac8-4017-8442-7fce34b1917d}'
+			Version = s '1.0'
+		}
+	}
+}
+HKEY_LOCAL_MACHINE
+{
+	NoRemove SOFTWARE
+	{
+		NoRemove 'Symvionics, Inc.'
+		{
+			NoRemove IADS
+			{
+				NoRemove IadsTpp
+				{
+					NoRemove Plugins
+					{
+						ForceRemove EPAWSS.RXTX
+						{
+						val Version = s '8.1.6'
+						}
+					}					
+				}
+			}
+		}
+	}
+}
