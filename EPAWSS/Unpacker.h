@@ -24,6 +24,7 @@ using namespace std;
 #define PARAM_SET_TX 2
 
 //#define DEBUG_UNPACK
+//#define DEBUG_2224
 
 class Unpacker
 {
@@ -35,6 +36,8 @@ public:
 
 	void initSpecialtyParams();
 	void createSpecialtyParams();
+	void createBlobInjectionParams();
+	void createBlobParam(Param* param, int reportID);
 	void loadParams(string paramCSVPath, int paramSet);
 	Param * createParam(
 		string name,
@@ -47,7 +50,8 @@ public:
 		UnpackingMode unpackMode,
 		double factor,
 		string group,
-		string subgroup
+		string subgroup,
+		MeasurementInputDataType midt = DOUBLE_TYPE
 	);
 	void addParam(Param * inParam);
 
@@ -62,7 +66,8 @@ public:
 	void sortReportLocations(std::map<short, std::vector<int>>& inReports, std::vector<int>& outSortedLocations);
 	void decodeReports(BYTE* pByte, int len, std::vector<int> reportLocations, long long iadsTime);
 
-	void decodeReports22and24(BYTE* pByte, std::vector<int> report22Locations, std::vector<int> report24Locations, long long intraPacketTime);
+	void countReports22and24(std::map<short, std::vector<int>>& reports);
+	void updateReportCountParams();
 
 private:
 
@@ -107,4 +112,8 @@ private:
 	byte overflowBuf[MAX_CH10_PACKET_SIZE];
 	uint32_t overflowBufSize = 0;
 	uint32_t overflowMsgLen = 0;
+
+	short report_22_count, report_24_count = 0;
+	Param* Report_22_Count = nullptr;
+	Param* Report_24_Count = nullptr;
 };

@@ -264,6 +264,70 @@ void Unpacker::createSpecialtyParams() {
 		mRWR->put_SubGroup(subgrp);
 		ds->addMeasurement(mRWR);
 	}
+	{
+		createBlobInjectionParams();
+	}
+}
+
+void Unpacker::createBlobInjectionParams() {
+	Report_22_Count = createParam("Report_22_Count", "", "", 22, 0, 0, 0, UnpackingMode::UM_SHORT, 1, "Control", "Report22Blobs", TWOS_COMPLEMENT_16);
+	Report_24_Count = createParam("Report_24_Count", "", "", 24, 0, 0, 0, UnpackingMode::UM_SHORT, 1, "Control", "Report24Blobs", TWOS_COMPLEMENT_16);
+
+	std::vector<Param*>* params22 = nullptr;
+	std::vector<Param*>* params24 = nullptr;
+
+	if (reportIDMap->find(22) != reportIDMap->end())
+		params22 = reportIDMap->at(22);
+	if (reportIDMap->find(24) != reportIDMap->end())
+		params24 = reportIDMap->at(24);
+
+	for (int i = 0; i < params22->size(); i++) {
+		createBlobParam(params22->at(i), 22);
+	}
+
+	for (int i = 0; i < params24->size(); i++) {
+		createBlobParam(params24->at(i), 24);
+	}
+}
+
+void Unpacker::createBlobParam(Param * param, int reportID) {
+	string nametmp = "Blob_" + param->name;
+
+	string triggerName;
+	if (reportID == 22)
+		triggerName = Report_22_Count->name;
+	else
+		triggerName = Report_24_Count->name;
+
+	string sEquation = "SetEquationUpdateRate(0),SetTriggerParam(" + triggerName + "),MakeBlob2(32," + param->name + ",";// + triggerName + ")";
+	if (reportID == 22)
+		sEquation += "8)";
+	else
+		sEquation += "25)";
+
+	bstr_t equation = sEquation.data();
+
+	bstr_t name = nametmp.data();
+	bstr_t name2 = nametmp.data();
+	bstr_t units = string("").data();
+
+	bstr_t longName = string("Blob of the last N values for the named parameter").data();
+
+	bstr_t grp = string("Control").data();
+	bstr_t subgrp = string("Report" + to_string(reportID) + "Blobs").data();
+
+	double sampleRate = 0.0;
+
+	MeasurementInputDataType midt = BLOB_TYPE;
+
+	CComQIPtr<IDerivedMeasurement> m;
+
+	HRESULT h = ds->CreateDerivedMeasurement(name.Detach(), name2.Detach(), longName.Detach(), units.Detach(), midt, sampleRate, equation, STANDARD_DERIVED, &m);
+	if (FAILED(h))
+		OutputDebugString("failed to createBasicMeasurement\n");
+	m->put_Group(grp);
+	m->put_SubGroup(subgrp);
+	ds->addMeasurement(m);
 }
 
 void Unpacker::loadParams(string paramCSVPath, int paramSet)
@@ -414,7 +478,8 @@ Param * Unpacker::createParam (
 	UnpackingMode unpackMode,
 	double factor,
 	string group,
-	string subgroup)
+	string subgroup,
+	MeasurementInputDataType midt)
 {
 
 	bstr_t name = inName.data();
@@ -429,8 +494,6 @@ Param * Unpacker::createParam (
 	CComQIPtr<IPluginMeasurement> m;
 
 	double sampleRate = 0.0;
-
-	MeasurementInputDataType midt = DOUBLE_TYPE;
 
 	//switch (unpackMode)
 	//{
@@ -765,6 +828,10 @@ int Unpacker::unpackMessage(BYTE* pByte, int len, long long iadsTime) {
 #endif
 		std::map<short, std::vector<int>> reports;
 		surveyReports(pByte, len, reports);
+		
+
+		countReports22and24(reports);
+
 
 		// Sort Report locations by time
 #ifdef DEBUG_UNPACK
@@ -873,7 +940,52 @@ void Unpacker::decodeReports(BYTE* pByte, int len, std::vector<int> reportLocati
 			}
 		}
 	}
+	
+	if (report_22_count > 0 || report_24_count > 0)
+		updateReportCountParams();
 }
+
+
+
+
+void Unpacker::countReports22and24(std::map<short, std::vector<int>>& reports) {
+	if (reports.find(22) != reports.end())
+		report_22_count = reports.find(22)->second.size();
+	else
+		report_22_count = 0;
+
+	if (reports.find(24) != reports.end())
+		report_24_count = reports.find(24)->second.size();
+	else
+		report_24_count = 0;
+
+#ifdef DEBUG_2224
+	OutputDebugString(std::string("Count reports 22 and 24: " + std::to_string(report_22_count) + ", " + std::to_string(report_24_count) + "\n").data());
+#endif
+}
+
+void Unpacker::updateReportCountParams() {
+#ifdef DEBUG_2224
+	OutputDebugString("Update report count params\n");
+#endif
+	{
+		// Report 22
+		VARIANT value;
+		value.vt = VT_I2;
+		value.iVal = report_22_count;
+		ds->PutData(Report_22_Count->measurement, value);
+	}
+	{
+		// Report 24
+		VARIANT value;
+		value.vt = VT_I2;
+		value.iVal = report_24_count;
+		ds->PutData(Report_24_Count->measurement, value);
+	}
+}
+
+
+
 
 void Unpacker::putTimeFromReportTimeTag(LONGLONG iadsTimeForPacket, uint32_t timeTag32, uint32_t reportID, bool makeSameTimeUnique) {
 
@@ -1060,60 +1172,3 @@ void Unpacker::extractParam(BYTE *data, int lenth, Param *param)
 	ds->PutData(param->measurement, value);
 }
 
-
-
-
-void Unpacker::decodeReports22and24(BYTE *pByte, std::vector<int> report22Locations, std::vector<int> report24Locations, long long intraPacketTime) {
-
-	int reportLocationIndex = 0;
-
-	// TODO: decode reports 22 and 24
-	while (reportLocationIndex < report22Locations.size() && reportLocationIndex < report24Locations.size())
-	{
-		// Report 22
-		int dataIndex = report22Locations.at(reportLocationIndex);
-		short reportID, reportSize = 0;
-
-		reportID = _byteswap_ushort(*(short*)&pByte[dataIndex]);
-		reportSize = _byteswap_ushort(*(short*)&pByte[dataIndex + 4]);
-
-		uint32_t timeTag32 = 0;
-		timeTag32 = _byteswap_ulong(*(uint32_t*)&pByte[dataIndex + 8]); // multiply by 50000 gets nanoseconds
-
-		putTimeFromReportTimeTag(intraPacketTime, timeTag32, reportID, true);
-
-		if (reportIDMap->find(reportID) != reportIDMap->end())
-		{ // Found reportID in the map
-			vector<Param*>* params = reportIDMap->at(reportID);
-
-			for (vector<Param*>::iterator iter = params->begin(); iter != params->end(); ++iter)
-			{
-				extractParam(&pByte[dataIndex], reportSize, (*iter));
-			}
-		}
-
-
-		// Report 24
-		dataIndex = report24Locations.at(reportLocationIndex);
-
-		reportID = _byteswap_ushort(*(short*)&pByte[dataIndex]);
-		reportSize = _byteswap_ushort(*(short*)&pByte[dataIndex + 4]);
-
-		timeTag32 = _byteswap_ulong(*(uint32_t*)&pByte[dataIndex + 8]); // multiply by 50000 gets nanoseconds
-
-		putTimeFromReportTimeTag(intraPacketTime, timeTag32, reportID, true);
-
-		if (reportIDMap->find(reportID) != reportIDMap->end())
-		{ // Found reportID in the map
-			vector<Param*>* params = reportIDMap->at(reportID);
-
-			for (vector<Param*>::iterator iter = params->begin(); iter != params->end(); ++iter)
-			{
-				extractParam(&pByte[dataIndex], reportSize, (*iter));
-			}
-		}
-
-
-		reportLocationIndex++;
-	}
-}
