@@ -7,6 +7,7 @@ Unpacker::Unpacker() {}
 Unpacker::Unpacker(IIadsTppCh10PluginDataStream * dataStream, string paramCSVPath, int paramSet)
 {
 	reportIDMap = new std::map<uint32_t, std::vector<Param *> *>();
+	blobParamMap = new std::map<uint32_t, std::vector<BlobParam *> *>();
 
 	ds = dataStream;
 
@@ -265,14 +266,13 @@ void Unpacker::createSpecialtyParams() {
 		ds->addMeasurement(mRWR);
 	}
 	{
+#ifdef USE_BLOB_PARAMS
 		createBlobInjectionParams();
+#endif
 	}
 }
 
 void Unpacker::createBlobInjectionParams() {
-	Report_22_Count = createParam("Report_22_Count", "", "", 22, 0, 0, 0, UnpackingMode::UM_SHORT, 1, "Control", "Report22Blobs", TWOS_COMPLEMENT_16);
-	Report_24_Count = createParam("Report_24_Count", "", "", 24, 0, 0, 0, UnpackingMode::UM_SHORT, 1, "Control", "Report24Blobs", TWOS_COMPLEMENT_16);
-
 	std::vector<Param*>* params22 = nullptr;
 	std::vector<Param*>* params24 = nullptr;
 
@@ -281,54 +281,23 @@ void Unpacker::createBlobInjectionParams() {
 	if (reportIDMap->find(24) != reportIDMap->end())
 		params24 = reportIDMap->at(24);
 
+	if (!params22 || !params24) return;
+
+	// Get the blob param map ready to go
+	blobParamMap->insert(std::pair<uint32_t, std::vector<BlobParam*>*>(22, new std::vector<BlobParam*>()));
+	blobParamMap->insert(std::pair<uint32_t, std::vector<BlobParam*>*>(24, new std::vector<BlobParam*>()));
+
 	for (int i = 0; i < params22->size(); i++) {
-		createBlobParam(params22->at(i), 22);
+		BlobParam* p = new BlobParam("Blob_" + params22->at(i)->name, params22->at(i)->reportID, "Control", "Report22Blobs", ds);
+		blobParamMap->at(22)->push_back(p);
 	}
 
 	for (int i = 0; i < params24->size(); i++) {
-		createBlobParam(params24->at(i), 24);
+		BlobParam* p = new BlobParam("Blob_" + params24->at(i)->name, params24->at(i)->reportID, "Control", "Report24Blobs", ds);
+		blobParamMap->at(24)->push_back(p);
 	}
 }
 
-void Unpacker::createBlobParam(Param * param, int reportID) {
-	string nametmp = "Blob_" + param->name;
-
-	string triggerName;
-	if (reportID == 22)
-		triggerName = Report_22_Count->name;
-	else
-		triggerName = Report_24_Count->name;
-
-	string sEquation = "SetEquationUpdateRate(0),SetTriggerParam(" + triggerName + "),MakeBlob2(32," + param->name + ",";// + triggerName + ")";
-	if (reportID == 22)
-		sEquation += "8)";
-	else
-		sEquation += "25)";
-
-	bstr_t equation = sEquation.data();
-
-	bstr_t name = nametmp.data();
-	bstr_t name2 = nametmp.data();
-	bstr_t units = string("").data();
-
-	bstr_t longName = string("Blob of the last N values for the named parameter").data();
-
-	bstr_t grp = string("Control").data();
-	bstr_t subgrp = string("Report" + to_string(reportID) + "Blobs").data();
-
-	double sampleRate = 0.0;
-
-	MeasurementInputDataType midt = BLOB_TYPE;
-
-	CComQIPtr<IDerivedMeasurement> m;
-
-	HRESULT h = ds->CreateDerivedMeasurement(name.Detach(), name2.Detach(), longName.Detach(), units.Detach(), midt, sampleRate, equation, STANDARD_DERIVED, &m);
-	if (FAILED(h))
-		OutputDebugString("failed to createBasicMeasurement\n");
-	m->put_Group(grp);
-	m->put_SubGroup(subgrp);
-	ds->addMeasurement(m);
-}
 
 void Unpacker::loadParams(string paramCSVPath, int paramSet)
 {
@@ -828,10 +797,6 @@ int Unpacker::unpackMessage(BYTE* pByte, int len, long long iadsTime) {
 #endif
 		std::map<short, std::vector<int>> reports;
 		surveyReports(pByte, len, reports);
-		
-
-		countReports22and24(reports);
-
 
 		// Sort Report locations by time
 #ifdef DEBUG_UNPACK
@@ -912,6 +877,8 @@ void Unpacker::sortReportLocations(std::map<short, std::vector<int>>& inReports,
 
 void Unpacker::decodeReports(BYTE* pByte, int len, std::vector<int> reportLocations, long long iadsTime) {
 
+	bool newBlobData = false;
+
 	for (int i = 0; i < reportLocations.size(); i++)
 	{
 		short reportID, reportSize = 0;
@@ -934,53 +901,51 @@ void Unpacker::decodeReports(BYTE* pByte, int len, std::vector<int> reportLocati
 		{ // Found reportID in the map
 			vector<Param*>* params = reportIDMap->at(reportID);
 
-			for (vector<Param*>::iterator iter = params->begin(); iter != params->end(); ++iter)
+			for (int j = 0; j < params->size(); j++)
 			{
-				extractParam(&pByte[dataIndex], reportSize, (*iter));
+				double value = extractParam(&pByte[dataIndex], reportSize, params->at(j));
+				
+#ifdef USE_BLOB_PARAMS
+				if (reportID == 22 || reportID == 24) {
+					addValueToBlob(reportID, j, value);
+					newBlobData = true;
+				}
+#endif
 			}
 		}
 	}
 	
-	if (report_22_count > 0 || report_24_count > 0)
-		updateReportCountParams();
+	if (newBlobData)
+		commitBlobs();
 }
 
 
 
+void Unpacker::addValueToBlob(short reportID, int paramIndex, double inValue) {
+	std::vector<BlobParam*>* params;
 
-void Unpacker::countReports22and24(std::map<short, std::vector<int>>& reports) {
-	if (reports.find(22) != reports.end())
-		report_22_count = reports.find(22)->second.size();
-	else
-		report_22_count = 0;
+	if (blobParamMap->find(reportID) != blobParamMap->end()) {
+		params = blobParamMap->at(reportID);
 
-	if (reports.find(24) != reports.end())
-		report_24_count = reports.find(24)->second.size();
-	else
-		report_24_count = 0;
-
-#ifdef DEBUG_2224
-	OutputDebugString(std::string("Count reports 22 and 24: " + std::to_string(report_22_count) + ", " + std::to_string(report_24_count) + "\n").data());
-#endif
-}
-
-void Unpacker::updateReportCountParams() {
-#ifdef DEBUG_2224
-	OutputDebugString("Update report count params\n");
-#endif
-	{
-		// Report 22
-		VARIANT value;
-		value.vt = VT_I2;
-		value.iVal = report_22_count;
-		ds->PutData(Report_22_Count->measurement, value);
+		params->at(paramIndex)->addValue((int)inValue);
 	}
-	{
-		// Report 24
-		VARIANT value;
-		value.vt = VT_I2;
-		value.iVal = report_24_count;
-		ds->PutData(Report_24_Count->measurement, value);
+}
+
+void Unpacker::commitBlobs() {
+	std::vector<BlobParam*>* params;
+
+	if (blobParamMap->find(22) != blobParamMap->end()) {
+		params = blobParamMap->at(22);
+		
+		for (int i = 0; i < params->size(); i++)
+			params->at(i)->commitData();
+	}
+
+	if (blobParamMap->find(24) != blobParamMap->end()) {
+		params = blobParamMap->at(24);
+
+		for (int i = 0; i < params->size(); i++)
+			params->at(i)->commitData();
 	}
 }
 
@@ -1054,7 +1019,7 @@ void Unpacker::putTimeFromReportTimeTag(LONGLONG iadsTimeForPacket, uint32_t tim
 
 
 // Extracts a parameter from inDataWord using the attributes described in param
-void Unpacker::extractParam(BYTE *data, int lenth, Param *param)
+double Unpacker::extractParam(BYTE *data, int lenth, Param *param)
 {
 	static uint32_t dataMask[33] = {
 		0x0000, 0x0001, 0x0003, 0x0007,

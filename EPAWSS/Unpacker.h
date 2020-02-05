@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Param.h"
+#include "BlobParam.h"
 #include "IadsTppCommon.h"
 
 #include <atlbase.h>
@@ -25,6 +26,7 @@ using namespace std;
 
 //#define DEBUG_UNPACK
 //#define DEBUG_2224
+#define USE_BLOB_PARAMS
 
 class Unpacker
 {
@@ -37,7 +39,6 @@ public:
 	void initSpecialtyParams();
 	void createSpecialtyParams();
 	void createBlobInjectionParams();
-	void createBlobParam(Param* param, int reportID);
 	void loadParams(string paramCSVPath, int paramSet);
 	Param * createParam(
 		string name,
@@ -59,15 +60,15 @@ public:
 	void unpackEthernet(BYTE *data, int len);
 	void unpackEPAWSS(BYTE* data, int len, LONGLONG iadsTimeForPacket);
 	void putTimeFromReportTimeTag(LONGLONG iadsTimeForPacket, uint32_t timeTag32, uint32_t reportID = 0, bool makeSameTimeUnique = false);
-	void extractParam(BYTE *data, int len, Param *param);
+	double extractParam(BYTE *data, int len, Param *param);
 
 	int unpackMessage(BYTE* pData, int len, long long iadsTime);
 	void surveyReports(BYTE* pData, int len, std::map<short, std::vector<int>> &reports);
 	void sortReportLocations(std::map<short, std::vector<int>>& inReports, std::vector<int>& outSortedLocations);
 	void decodeReports(BYTE* pByte, int len, std::vector<int> reportLocations, long long iadsTime);
 
-	void countReports22and24(std::map<short, std::vector<int>>& reports);
-	void updateReportCountParams();
+	void addValueToBlob(short reportID, int paramIndex, double inValue);
+	void commitBlobs();
 
 private:
 
@@ -80,6 +81,7 @@ private:
 
 
 	std::map<uint32_t, std::vector<Param *> *> * reportIDMap;
+	std::map<uint32_t, std::vector<BlobParam *> *> * blobParamMap;
 
 	CComQIPtr<IIadsTppCh10PluginDataStream> ds;
 

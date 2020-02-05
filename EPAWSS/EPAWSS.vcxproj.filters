@@ -57,6 +57,9 @@
     <ClInclude Include="Unpacker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BlobParam.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EPAWSS.cpp">
@@ -87,6 +90,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Unpacker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BlobParam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
