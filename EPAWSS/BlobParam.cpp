@@ -2,12 +2,17 @@
 
 BlobParam::BlobParam(
     std::string strname, 
-    uint32_t reportID, 
+    uint32_t inReportID, 
+    BLOB_PARAM_DATA_TYPE dt,
     std::string strGroup,
     std::string strSubgroup,
     IIadsTppCh10PluginDataStream* dataStream)
 {
     ds = dataStream;
+
+    name = strname;
+    reportID = inReportID;
+    dataType = dt;
 
     bstr_t name = strname.data();
     bstr_t name2 = strname.data();
@@ -52,15 +57,23 @@ void BlobParam::commitData() {
     SafeArrayAccessData(blobData, (void**)&byteData);
     memset(byteData, 0, maxBlobSize);
 
+
+    // Fill data header
+    Header h;
+    h.size = (nextValues.size() * sizeof(int)) + SIZEOF_HEADER;
+    h.type = 0xFFFF;
+    memcpy(byteData, &h, SIZEOF_HEADER);
+
     // Fill data array with vector values
+    int headerOffset = SIZEOF_HEADER;
     for (int i = 0; i < nextValues.size(); ++i)
-        *((int*)&byteData[i * sizeof(int)]) = nextValues.at(i);
+        *((int*)&byteData[(i * sizeof(int)) + headerOffset]) = nextValues.at(i);
 
 
     VARIANT vd;
     vd.vt = VT_ARRAY | VT_UI1;
     vd.parray = blobData;
-    vd.parray->rgsabound->cElements = nextValues.size();
+    //vd.parray->rgsabound->cElements = nextValues.size();
     SafeArrayUnaccessData(blobData);
     byteData = NULL;
 

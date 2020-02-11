@@ -288,12 +288,12 @@ void Unpacker::createBlobInjectionParams() {
 	blobParamMap->insert(std::pair<uint32_t, std::vector<BlobParam*>*>(24, new std::vector<BlobParam*>()));
 
 	for (int i = 0; i < params22->size(); i++) {
-		BlobParam* p = new BlobParam("Blob_" + params22->at(i)->name, params22->at(i)->reportID, "Control", "Report22Blobs", ds);
+		BlobParam* p = new BlobParam("Blob_" + params22->at(i)->name, params22->at(i)->reportID, BLOB_INT_TYPE, "Control", "Report22Blobs", ds);
 		blobParamMap->at(22)->push_back(p);
 	}
 
 	for (int i = 0; i < params24->size(); i++) {
-		BlobParam* p = new BlobParam("Blob_" + params24->at(i)->name, params24->at(i)->reportID, "Control", "Report24Blobs", ds);
+		BlobParam* p = new BlobParam("Blob_" + params24->at(i)->name, params24->at(i)->reportID, BLOB_INT_TYPE, "Control", "Report24Blobs", ds);
 		blobParamMap->at(24)->push_back(p);
 	}
 }
@@ -891,7 +891,7 @@ void Unpacker::decodeReports(BYTE* pByte, int len, std::vector<int> reportLocati
 		uint32_t timeTag32 = 0;
 		timeTag32 = _byteswap_ulong(*(uint32_t*)&pByte[dataIndex + 8]); // multiply by 50000 gets nanoseconds
 
-		putTimeFromReportTimeTag(iadsTime, timeTag32, reportID, true);
+		putTimeFromReportTimeTag(iadsTime, timeTag32, reportID, false);
 
 
 		if (reportSize > (len - dataIndex))
@@ -961,6 +961,9 @@ void Unpacker::putTimeFromReportTimeTag(LONGLONG iadsTimeForPacket, uint32_t tim
 
 	// If new IADS time, clear timeRecords map
 	if (iadsTimeForPacket != lastIadsTime) {
+		for (std::map<uint32_t, ReportTimeRecord*>::iterator iter = timeRecords->begin(); iter != timeRecords->end(); iter++) {
+			delete iter->second;
+		}
 		timeRecords->clear();
 		lastIadsTime = iadsTimeForPacket;
 	}
@@ -989,7 +992,7 @@ void Unpacker::putTimeFromReportTimeTag(LONGLONG iadsTimeForPacket, uint32_t tim
 #endif
 
 	// ==== Determine time using Report Time Tag ====
-	if (timeTag32 != r->timetag_previous) {
+	if (timeTag32 != r->timetag_previous || !makeSameTimeUnique) {
 		r->timetag_offset = 1;
 		r->timetag_previous = timeTag32;
 
