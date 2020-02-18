@@ -33,7 +33,7 @@ public:
 		IIadsTppCh10PluginDataStream* dataStream);
 	~BlobParam();
 
-	void addValue(int inValue);
+	void addValue(double inValue);
 	void commitData();
 
 	std::string name;
@@ -43,9 +43,14 @@ public:
 	CComQIPtr<IPluginMeasurement> mBlob;
 
 private:
+
+	void addValue(int inValue);
+	void addValue(float inValue);
+
 	CComQIPtr<IIadsTppCh10PluginDataStream> ds;
 
-	std::vector<int> nextValues;
+	std::vector<int> nextValuesI;
+	std::vector<float> nextValuesF;
 	byte dataBuf[maxBlobSize];
 	SAFEARRAY * blobData;
 

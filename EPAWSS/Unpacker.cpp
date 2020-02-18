@@ -288,12 +288,22 @@ void Unpacker::createBlobInjectionParams() {
 	blobParamMap->insert(std::pair<uint32_t, std::vector<BlobParam*>*>(24, new std::vector<BlobParam*>()));
 
 	for (int i = 0; i < params22->size(); i++) {
-		BlobParam* p = new BlobParam("Blob_" + params22->at(i)->name, params22->at(i)->reportID, BLOB_INT_TYPE, "Control", "Report22Blobs", ds);
+
+		BLOB_PARAM_DATA_TYPE dt = BLOB_INT_TYPE;
+		if (params22->at(i)->factor != 1.0)
+			dt = BLOB_FLOAT_TYPE;
+
+		BlobParam* p = new BlobParam("Blob_" + params22->at(i)->name, params22->at(i)->reportID, dt, "Control", "Report22Blobs", ds);
 		blobParamMap->at(22)->push_back(p);
 	}
 
 	for (int i = 0; i < params24->size(); i++) {
-		BlobParam* p = new BlobParam("Blob_" + params24->at(i)->name, params24->at(i)->reportID, BLOB_INT_TYPE, "Control", "Report24Blobs", ds);
+
+		BLOB_PARAM_DATA_TYPE dt = BLOB_INT_TYPE;
+		if (params24->at(i)->factor != 1.0)
+			dt = BLOB_FLOAT_TYPE;
+
+		BlobParam* p = new BlobParam("Blob_" + params24->at(i)->name, params24->at(i)->reportID, dt, "Control", "Report24Blobs", ds);
 		blobParamMap->at(24)->push_back(p);
 	}
 }
@@ -927,7 +937,7 @@ void Unpacker::addValueToBlob(short reportID, int paramIndex, double inValue) {
 	if (blobParamMap->find(reportID) != blobParamMap->end()) {
 		params = blobParamMap->at(reportID);
 
-		params->at(paramIndex)->addValue((int)inValue);
+		params->at(paramIndex)->addValue(inValue);
 	}
 }
 

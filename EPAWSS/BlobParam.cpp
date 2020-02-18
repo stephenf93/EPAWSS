@@ -45,30 +45,79 @@ BlobParam::~BlobParam()
 }
 
 
+void BlobParam::addValue(double inValue) {
+    switch (dataType) {
+        case BLOB_INT_TYPE:
+            addValue((int)inValue);
+            break;
+        case BLOB_FLOAT_TYPE:
+            addValue((float)inValue);
+            break;
+        default: break;
+    }
+}
+
 void BlobParam::addValue(int inValue) {
-	nextValues.push_back(inValue);
+	nextValuesI.push_back(inValue);
+}
+
+void BlobParam::addValue(float inValue) {
+    nextValuesF.push_back(inValue);
 }
 
 void BlobParam::commitData() {
     if (!blobData) return;
-    if (nextValues.empty()) return;
+
+    // check for data
+    switch (dataType) {
+        case BLOB_INT_TYPE:
+            if (nextValuesI.empty()) return;
+            break;
+        case BLOB_FLOAT_TYPE:
+            if (nextValuesF.empty()) return;
+            break;
+        default: return;
+    }
 
     BYTE* byteData;
     SafeArrayAccessData(blobData, (void**)&byteData);
     memset(byteData, 0, maxBlobSize);
 
 
+    // get number of elements to write
+    uint16_t numElements = 0;
+    switch (dataType) {
+    case BLOB_INT_TYPE:
+        numElements = nextValuesI.size();
+        break;
+    case BLOB_FLOAT_TYPE:
+        numElements = nextValuesF.size();
+        break;
+    default: break;
+    }
+
+
     // Fill data header
     Header h;
-    h.size = (nextValues.size() * sizeof(int)) + SIZEOF_HEADER;
-    h.type = 0xFFFF;
+    h.size = (numElements * sizeof(int)) + SIZEOF_HEADER;
+    h.type = dataType;
     memcpy(byteData, &h, SIZEOF_HEADER);
+
+    //OutputDebugString(std::string(std::to_string(byteData[0]) + " " + std::to_string(byteData[1]) + " " + 
+    //    std::to_string(byteData[2]) + " " + std::to_string(byteData[3]) + "\n").data());
 
     // Fill data array with vector values
     int headerOffset = SIZEOF_HEADER;
-    for (int i = 0; i < nextValues.size(); ++i)
-        *((int*)&byteData[(i * sizeof(int)) + headerOffset]) = nextValues.at(i);
-
+    for (int i = 0; i < numElements; ++i)
+        switch (dataType) {
+            case BLOB_INT_TYPE:
+                *((int*)&byteData[(i * sizeof(int)) + headerOffset]) = nextValuesI.at(i);
+                break;
+            case BLOB_FLOAT_TYPE:
+                *((float*)&byteData[(i * sizeof(float)) + headerOffset]) = nextValuesF.at(i);
+                break;
+            default: break;
+        }
 
     VARIANT vd;
     vd.vt = VT_ARRAY | VT_UI1;
@@ -78,7 +127,8 @@ void BlobParam::commitData() {
     byteData = NULL;
 
     //mBlob->put_BlobSizeInBytes(nextValues.size() * sizeof(int));
-    nextValues.clear();
+    nextValuesI.clear();
+    nextValuesF.clear();
 
     ds->PutData(mBlob, vd);
 }
