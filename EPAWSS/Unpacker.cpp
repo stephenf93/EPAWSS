@@ -642,6 +642,10 @@ void Unpacker::unpackEthernet(BYTE *data, int len)
 
 		pHeader = (IPH_EthernetF0 *)pByte;
 
+#ifdef DEBUG_UNPACK
+		OutputDebugString(std::string("IPH->dataLen:" + std::to_string(pHeader->uDataLen) + "\n").data());
+#endif
+
 		// check for valid length
 		if (pHeader->uDataLen <= 0) {
 			break;
@@ -674,11 +678,20 @@ void Unpacker::unpackEthernet(BYTE *data, int len)
 		}
 
 
-		pByte += 42; // 42 = pass over Ethernet header
-		len -= 42; // 42 = pass over Ethernet header
+		pByte += sizeof_Ethernet_Header; // 42 = pass over Ethernet header
+		len -= sizeof_Ethernet_Header; // 42 = pass over Ethernet header
+		len -= sizeof_Ethernet_Trailer; // trim off the Ethernet trailer from end
 
 		// See if there is a partial message in the overflow buffer
 		if (overflowBufSize > 0) {
+
+			pByte -= 8;
+			len += 8;
+
+#ifdef DEBUG_UNPACK
+			OutputDebugString(std::string("partial message len:" + std::to_string(len) + "\n").data());
+#endif
+
 			if (overflowMsgLen - overflowBufSize > len) { // if overflowing again, discard data
 				sprintf_s(out, "Error: overflowing on second pass. overflowBufSize: %d, overflowMsgLen: %d\n", overflowBufSize, overflowMsgLen);
 				OutputDebugString(out);
@@ -723,9 +736,6 @@ void Unpacker::unpackEPAWSS(BYTE* data, int len, LONGLONG iadsTimeForPacket)
 	//ds->PutTime(iadsTimeForPacket);
 
 	BYTE* pByte = data;
-
-	//pByte += 42; // 42 = pass over Ethernet header
-	//len -= 42; // 42 = pass over Ethernet header
 
 	// See if there is a partial message in the overflow buffer
 	if (overflowBufSize > 0) {
@@ -798,6 +808,9 @@ int Unpacker::unpackMessage(BYTE* pByte, int len, long long iadsTime) {
 			memcpy_s(overflowBuf, MAX_CH10_PACKET_SIZE, pByte, len);
 			overflowBufSize = len;
 			overflowMsgLen = messageSize;
+#ifdef DEBUG_UNPACK
+			OutputDebugString(std::string("Overflow -- messageSize: " + std::to_string(messageSize) + ", len: " + std::to_string(len) + "\n").data());
+#endif
 			return -1;
 		}
 
@@ -834,12 +847,13 @@ void Unpacker::surveyReports(BYTE* pByte, int len, std::map<short, std::vector<i
 		reportID = _byteswap_ushort(*(short*)&pByte[dataIndex]);
 		reportSize = _byteswap_ushort(*(short*)&pByte[dataIndex + 4]);
 
-		if (reportSize > (len - dataIndex) || reportSize == 0)
-			return;
-
 #ifdef DEBUG_UNPACK
+		OutputDebugString(std::string("dataIndex: " + std::to_string(dataIndex) + ", len: " + std::to_string(len) + "\n").data());
 		OutputDebugString(std::string("reportID: " + std::to_string(reportID)).data());
 #endif
+
+		if (reportSize > (len - dataIndex) || reportSize == 0)
+			return;
 
 		if (reports.find(reportID) == reports.end()) { // first of this reportID
 			std::vector<int> v; v.push_back(dataIndex);
