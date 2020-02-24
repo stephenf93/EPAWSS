@@ -290,7 +290,9 @@ void Unpacker::createBlobInjectionParams() {
 	for (int i = 0; i < params22->size(); i++) {
 
 		BLOB_PARAM_DATA_TYPE dt = BLOB_INT_TYPE;
-		if (params22->at(i)->factor != 1.0)
+
+		int intPart = (int)params22->at(i)->factor;
+		if (params22->at(i)->factor - (double)intPart != 0.0 || params22->at(i)->unpackMode == UM_FLOAT)
 			dt = BLOB_FLOAT_TYPE;
 
 		BlobParam* p = new BlobParam("Blob_" + params22->at(i)->name, params22->at(i)->reportID, dt, "Control", "Report22Blobs", ds);
@@ -300,7 +302,9 @@ void Unpacker::createBlobInjectionParams() {
 	for (int i = 0; i < params24->size(); i++) {
 
 		BLOB_PARAM_DATA_TYPE dt = BLOB_INT_TYPE;
-		if (params24->at(i)->factor != 1.0)
+
+		int intPart = (int)params24->at(i)->factor;
+		if (params24->at(i)->factor - (double)intPart != 0.0 || params24->at(i)->unpackMode == UM_FLOAT)\
 			dt = BLOB_FLOAT_TYPE;
 
 		BlobParam* p = new BlobParam("Blob_" + params24->at(i)->name, params24->at(i)->reportID, dt, "Control", "Report24Blobs", ds);
@@ -369,11 +373,11 @@ void Unpacker::loadParams(string paramCSVPath, int paramSet)
 			unpackMode = UM_UINT;
 		// TREATING FIXED AS WHOLE NUMBERS
 		else if (!strcmp(tmp.data(), "short fixed"))
-			unpackMode = UM_SHORT;
+			unpackMode = UM_FLOAT;
 		else if (!strcmp(tmp.data(), "signed fixed") || !strcmp(tmp.data(), "fixed"))
-			unpackMode = UM_INT;
+			unpackMode = UM_FLOAT;
 		else if (!strcmp(tmp.data(), "unsigned fixed"))
-			unpackMode = UM_UINT;
+			unpackMode = UM_FLOAT;
 		else if (!strcmp(tmp.data(), "char"))
 			unpackMode = UM_BYTE;
 		else if (!strcmp(tmp.data(), "bitmask"))
