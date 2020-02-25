@@ -99,15 +99,15 @@ void BlobParam::commitData() {
 
     // Fill data header
     Header h;
-    h.size = (numElements * sizeof(int)) + SIZEOF_CUSTOM_HEADER;
+    h.size = (numElements * sizeof(int)) + SIZEOF_HEADER;
     h.type = dataType;
-    memcpy(byteData, &h, SIZEOF_CUSTOM_HEADER);
+    memcpy(byteData, &h, SIZEOF_HEADER);
 
     //OutputDebugString(std::string(std::to_string(byteData[0]) + " " + std::to_string(byteData[1]) + " " + 
     //    std::to_string(byteData[2]) + " " + std::to_string(byteData[3]) + "\n").data());
 
     // Fill data array with vector values
-    int headerOffset = SIZEOF_CUSTOM_HEADER;
+    int headerOffset = SIZEOF_HEADER;
     for (int i = 0; i < numElements; ++i)
         switch (dataType) {
             case BLOB_INT_TYPE:

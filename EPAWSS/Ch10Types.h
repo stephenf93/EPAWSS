@@ -178,9 +178,6 @@ struct IPH_EthernetF0 {
 
 #define sizeof_IPH_EthernetF0 12
 
-#define sizeof_Ethernet_Header 42
-#define sizeof_Ethernet_Trailer 4
-
 struct CSDW_FibreF0 {
 	uint32_t numOfFrames : 16;
 	uint32_t reserved1 : 12;

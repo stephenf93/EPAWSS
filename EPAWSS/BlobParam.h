@@ -10,9 +10,8 @@
 
 #include "Ch10Types.h"
 
-#define SIZEOF_CUSTOM_HEADER 4
 #define maxBlobElements 128
-#define maxBlobSize (maxBlobElements * sizeof(int)) + SIZEOF_CUSTOM_HEADER
+#define maxBlobSize maxBlobElements * sizeof(int)
 
 using namespace ATL;
 
@@ -59,5 +58,6 @@ private:
 		uint16_t size;
 		uint16_t type;
 	};
+#define SIZEOF_HEADER 4
 };
 
