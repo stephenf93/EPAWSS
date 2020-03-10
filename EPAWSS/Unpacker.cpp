@@ -304,7 +304,7 @@ void Unpacker::createBlobInjectionParams() {
 		BLOB_PARAM_DATA_TYPE dt = BLOB_INT_TYPE;
 
 		int intPart = (int)params24->at(i)->factor;
-		if (params24->at(i)->factor - (double)intPart != 0.0 || params24->at(i)->unpackMode == UM_FLOAT)\
+		if (params24->at(i)->factor - (double)intPart != 0.0 || params24->at(i)->unpackMode == UM_FLOAT)
 			dt = BLOB_FLOAT_TYPE;
 
 		BlobParam* p = new BlobParam("Blob_" + params24->at(i)->name, params24->at(i)->reportID, dt, "Control", "Report24Blobs", ds);
@@ -918,7 +918,7 @@ void Unpacker::decodeReports(BYTE* pByte, int len, std::vector<int> reportLocati
 			for (int j = 0; j < params->size(); j++)
 			{
 				double value = extractParam(&pByte[dataIndex], reportSize, params->at(j));
-				
+
 #ifdef USE_BLOB_PARAMS
 				if (reportID == 22 || reportID == 24) {
 					addValueToBlob(reportID, j, value);
@@ -1131,8 +1131,19 @@ double Unpacker::extractParam(BYTE *data, int lenth, Param *param)
 		//	tmp[3];
 		//rawvalue.vt = VT_R4;
 		//memcpy(&(rawvalue.fltVal), &dataWord, 4);
-		float dataWord = *(float *)tmp;
+
+
+		uint32_t dataWordInt = *(uint32_t*)tmp;
+
+		if (sign) // convert from Two's Complement
+			dataWordInt = (~*(uint32_t*)tmp & dataMask[param->numBits]) + 1;
+
+		float dataWord = (float)dataWordInt;
+
 		eu = (double)dataWord * param->factor;
+
+		if (sign)
+			eu *= -1;
 
 		param->currentValue = to_string(eu);
 		break;
