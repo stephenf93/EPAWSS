@@ -11,11 +11,21 @@ Unpacker::Unpacker(IIadsTppCh10PluginDataStream * dataStream, string paramCSVPat
 
 	ds = dataStream;
 
+#ifdef USE_SPECIALTY_PARAMS
 	initSpecialtyParams();
+#endif
 
 	loadParams(paramCSVPath, paramSet);
 
+#ifdef USE_SPECIALTY_PARAMS
+	gatherSpecialtyParameters();
+
 	createSpecialtyParams();
+#endif
+
+#ifdef USE_BLOB_PARAMS
+	createBlobInjectionParams();
+#endif
 }
 
 Unpacker::~Unpacker()
@@ -23,6 +33,8 @@ Unpacker::~Unpacker()
 }
 
 void Unpacker::gatherSpecialtyParameters() {
+
+#ifdef USE_OLD_THREATREPORT_PARAMS
 	if (reportIDMap->find(24) != reportIDMap->end()) {
 		{ // Emitter Control Parameters
 			std::vector<Param *> * params = reportIDMap->at(24);
@@ -59,6 +71,8 @@ void Unpacker::gatherSpecialtyParameters() {
 			}
 		}
 	}
+#endif
+
 }
 
 bool Unpacker::isMatchingParamID(Param * inParam, ParamID inParamID) {
@@ -73,6 +87,7 @@ bool Unpacker::isMatchingParamID(Param * inParam, ParamID inParamID) {
 void Unpacker::initSpecialtyParams() {
 	// Add contributing ParamIDs to associated list
 
+#ifdef USE_OLD_THREATREPORT_PARAMS
 	// Emitter Control
 	emitterControlParamIDs.push_back(ParamID(24, 196, 1568 % 8)); // Frequency_List_Num1__Last_
 	//emitterControlParamIDs.push_back(ParamID(24, 200, 1600 % 8)); // Frequency_List_Num2_24
@@ -121,9 +136,47 @@ void Unpacker::initSpecialtyParams() {
 	rwrParamIDs.push_back(ParamID(24, 178, 1424 % 8)); // Jam_Status
 	rwrParamIDs.push_back(ParamID(24, 284, 2272 % 8)); // JAM_Active_24
 	rwrParamIDs.push_back(ParamID(24, 285, 2280 % 8)); // Jamming_Quadrant
+#endif
+
+
 }
 
 void Unpacker::createSpecialtyParams() {
+
+#ifdef USE_SELECTEDTHREAT_PARAM
+	{
+		string nametmp = "SelectedThreat";
+
+		string displayName = "ThreatReport1";
+		string propertyName = "SelectedThreat";
+
+		string sEquation = "GetValue(\"" + displayName + "\", \"" + propertyName + "\")";
+
+		bstr_t equation = sEquation.data();
+
+		bstr_t name = nametmp.data();
+		bstr_t name2 = nametmp.data();
+		bstr_t units = string("").data();
+
+		bstr_t longName = string("Gathers_ID_of_selected_threat_from_Threat_Report_table").data();
+
+		bstr_t grp = string("Control").data();
+		bstr_t subgrp = string("Parameters").data();
+
+		double sampleRate = 5.0;
+
+		MeasurementInputDataType midt = MeasurementInputDataType::TWOS_COMPLEMENT;
+
+		HRESULT h = ds->CreateDerivedMeasurement(name.Detach(), name2.Detach(), longName.Detach(), units.Detach(), midt, sampleRate, equation, STANDARD_DERIVED, &mSelectedThreat);
+		if (FAILED(h))
+			OutputDebugString("failed to createBasicMeasurement\n");
+		mSelectedThreat->put_Group(grp);
+		mSelectedThreat->put_SubGroup(subgrp);
+		ds->addMeasurement(mSelectedThreat);
+	}
+#endif
+
+#ifdef USE_OLD_THREATREPORT_PARAMS
 	{
 		string nametmp = "Emitter_Report";
 
@@ -265,11 +318,8 @@ void Unpacker::createSpecialtyParams() {
 		mRWR->put_SubGroup(subgrp);
 		ds->addMeasurement(mRWR);
 	}
-	{
-#ifdef USE_BLOB_PARAMS
-		createBlobInjectionParams();
 #endif
-	}
+
 }
 
 void Unpacker::createBlobInjectionParams() {
@@ -445,9 +495,6 @@ void Unpacker::loadParams(string paramCSVPath, int paramSet)
 	ifs.close();
 
 	// === End read CSV ===
-
-
-	gatherSpecialtyParameters();
 }
 
 Param * Unpacker::createParam (

@@ -26,7 +26,10 @@ using namespace std;
 
 //#define DEBUG_UNPACK
 //#define DEBUG_2224
+#define USE_SPECIALTY_PARAMS
 #define USE_BLOB_PARAMS
+#define USE_SELECTEDTHREAT_PARAM
+//#define USE_OLD_THREATREPORT_PARAMS
 
 class Unpacker
 {
@@ -97,6 +100,11 @@ private:
 	void gatherSpecialtyParameters();
 	bool isMatchingParamID(Param * inParam, ParamID inParamID);
 
+#ifdef USE_SELECTEDTHREAT_PARAM
+	CComQIPtr<IDerivedMeasurement> mSelectedThreat;
+#endif
+
+#ifdef USE_OLD_THREATREPORT_PARAMS
 	CComQIPtr<IDerivedMeasurement> mEmitterControl;
 	std::vector<ParamID> emitterControlParamIDs;
 	std::vector<Param *> emitterControlParams;
@@ -107,6 +115,7 @@ private:
 	CComQIPtr<IDerivedMeasurement> mRWR;
 	std::vector<ParamID> rwrParamIDs;
 	std::vector<Param *> rwrParams;
+#endif
 	// ========
 
 	bool dualBus;
