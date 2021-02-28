@@ -24,7 +24,7 @@ class ATL_NO_VTABLE CRXTX :
 	public CComObjectRootEx<CComMultiThreadModel>,
 	public CComCoClass<CRXTX, &CLSID_RXTX>,
 	public IDispatchImpl<IRXTX, &IID_IRXTX, &LIBID_EPAWSSLib, /*wMajor =*/ 1, /*wMinor =*/ 0>,
-	public IDispatchImpl<IIadsTppCh10Plugin, &__uuidof(IIadsTppCh10Plugin), &LIBID_IadsTppCommonLib, /* wMajor = */ 1, /* wMinor = */ 0>
+	public IDispatchImpl<IIadsTppCh10EthernetPlugin2, &__uuidof(IIadsTppCh10EthernetPlugin2), &LIBID_IadsTppCommonLib, /* wMajor = */ 1, /* wMinor = */ 0>
 {
 public:
 	CRXTX()
@@ -36,8 +36,9 @@ DECLARE_REGISTRY_RESOURCEID(106)
 
 BEGIN_COM_MAP(CRXTX)
 	COM_INTERFACE_ENTRY(IRXTX)
-	COM_INTERFACE_ENTRY2(IDispatch, IIadsTppCh10Plugin)
-	COM_INTERFACE_ENTRY(IIadsTppCh10Plugin)
+	COM_INTERFACE_ENTRY2(IDispatch, IIadsTppCh10EthernetPlugin2)
+	COM_INTERFACE_ENTRY(IIadsTppCh10EthernetPlugin2)
+	COM_INTERFACE_ENTRY(IIadsTppCh10EthernetPlugin)
 END_COM_MAP()
 
 
@@ -57,12 +58,7 @@ public:
 
 	string paramCSVPath;
 
-	LONG packetNumber;
-
 	Unpacker unpacker;
-
-	CComQIPtr<IPluginMeasurement> mPacketCounter;
-
 
 
 	// IIadsTppCh10Plugin Methods
@@ -96,10 +92,6 @@ public:
 		GetPrivateProfileString("general", "paramcsv", "C:\\CANIS\\params.csv", outstr, outstrsize, sValue);
 		paramCSVPath = string(outstr);
 
-		//char out[25];
-		//sprintf_s(out, "\nerror: %d\n", ls);
-		//OutputDebugString(out);
-
 
 		CComQIPtr<IIadsTppCh10PluginDataStream> ds = dataStream;
 		if (ds == NULL) return E_POINTER;
@@ -110,32 +102,35 @@ public:
 		// Add your function implementation here.
 		return S_OK;
 	}
-	STDMETHOD(ProcessCh10Packet)(IIadsTppCh10PluginDataStream* dataStream, VARIANT data, LONG packageSize, LONGLONG iadsTimeFromHeader)
+
+	STDMETHOD(ProcessEthernetPayload)(IIadsTppCh10PluginDataStream* dataStream, VARIANT data, LONG packageSize, LONGLONG iadsTimeFromHeader)
 	{
+		return E_NOTIMPL;
+	}
 
-		//OutputDebugString("====Process Data====\n");
-
-		// Add your function implementation here.
-		dataStream->PutTime(iadsTimeFromHeader);
-
+	STDMETHOD(ProcessEthernetPayloadMultiChannel)(IIadsTppCh10PluginDataStream* dataStream, VARIANT data, LONG packageSize, LONGLONG iadsTimeForPacket, LONG packetId)
+	{
 		byte* payload = NULL;
 		HR(SafeArrayAccessData(data.parray, (void**)&payload));
 
 		long upperBound = data.parray->rgsabound->cElements + data.parray->rgsabound->lLbound;
 		long lowerBound = data.parray->rgsabound->lLbound;
 
-		unpacker.unpack(payload, upperBound - lowerBound);
+		//OutputDebugString(std::string("data length: " + std::to_string(upperBound- lowerBound) + "\n").data());
+
+		unpacker.unpackEPAWSS(payload, upperBound - lowerBound, iadsTimeForPacket);
 
 		//Make sure you unlock the array when you're done! 
 		SafeArrayUnaccessData(data.parray);
 
 		return S_OK;
 	}
-	STDMETHOD(get_Ch10PacketType)(ULONG* pval)
+	STDMETHOD(get_SupportsMultiChannel)(VARIANT_BOOL* doesSupport)
 	{
-		//Message F0 data is type 0x30
-		if (pval == NULL) return E_POINTER;
-		*pval = 0x30;
+		//OutputDebugString("get_supportsMultiChannel1\n");
+		if (doesSupport == NULL) return E_POINTER;
+		//OutputDebugString("get_supportsMultiChannel2\n");
+		*doesSupport = VARIANT_TRUE;
 		return S_OK;
 	}
 };

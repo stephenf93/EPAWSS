@@ -136,4 +136,4 @@ public:
 	}
 };
 
-OBJECT_ENTRY_AUTO(__uuidof(TXdual), CTXdual)
+//OBJECT_ENTRY_AUTO(__uuidof(TXdual), CTXdual)

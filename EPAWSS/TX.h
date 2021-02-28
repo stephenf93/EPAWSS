@@ -24,7 +24,7 @@ class ATL_NO_VTABLE CTX :
 	public CComObjectRootEx<CComMultiThreadModel>,
 	public CComCoClass<CTX, &CLSID_TX>,
 	public IDispatchImpl<ITX, &IID_ITX, &LIBID_EPAWSSLib, /*wMajor =*/ 1, /*wMinor =*/ 0>,
-	public IDispatchImpl<IIadsTppCh10Plugin, &__uuidof(IIadsTppCh10Plugin), &LIBID_IadsTppCommonLib, /* wMajor = */ 1, /* wMinor = */ 0>
+	public IDispatchImpl<IIadsTppCh10EthernetPlugin2, &__uuidof(IIadsTppCh10EthernetPlugin2), &LIBID_IadsTppCommonLib, /* wMajor = */ 1, /* wMinor = */ 0>
 {
 public:
 	CTX()
@@ -36,8 +36,9 @@ DECLARE_REGISTRY_RESOURCEID(108)
 
 BEGIN_COM_MAP(CTX)
 	COM_INTERFACE_ENTRY(ITX)
-	COM_INTERFACE_ENTRY2(IDispatch, IIadsTppCh10Plugin)
-	COM_INTERFACE_ENTRY(IIadsTppCh10Plugin)
+	COM_INTERFACE_ENTRY2(IDispatch, IIadsTppCh10EthernetPlugin2)
+	COM_INTERFACE_ENTRY(IIadsTppCh10EthernetPlugin2)
+	COM_INTERFACE_ENTRY(IIadsTppCh10EthernetPlugin)
 END_COM_MAP()
 
 
@@ -54,8 +55,6 @@ END_COM_MAP()
 	}
 
 public:
-
-
 
 	string paramCSVPath;
 
@@ -100,33 +99,41 @@ public:
 		// INIT UNPACKER HERE
 		unpacker = Unpacker(ds, paramCSVPath, PARAM_SET_TX);
 
+
 		return S_OK;
 	}
-	STDMETHOD(ProcessCh10Packet)(IIadsTppCh10PluginDataStream* dataStream, VARIANT data, LONG packageSize, LONGLONG iadsTimeFromHeader)
-	{
-		// Add your function implementation here.
-		dataStream->PutTime(iadsTimeFromHeader);
 
+	STDMETHOD(ProcessEthernetPayload)(IIadsTppCh10PluginDataStream* dataStream, VARIANT data, LONG packageSize, LONGLONG iadsTimeFromHeader)
+	{
+		return E_NOTIMPL;
+	}
+
+	STDMETHOD(ProcessEthernetPayloadMultiChannel)(IIadsTppCh10PluginDataStream* dataStream, VARIANT data, LONG packageSize, LONGLONG iadsTimeForPacket, LONG packetId)
+	{
 		byte* payload = NULL;
 		HR(SafeArrayAccessData(data.parray, (void**)&payload));
 
 		long upperBound = data.parray->rgsabound->cElements + data.parray->rgsabound->lLbound;
 		long lowerBound = data.parray->rgsabound->lLbound;
 
-		unpacker.unpackEthernet(payload, upperBound - lowerBound);
+		//OutputDebugString(std::string("data length: " + std::to_string(upperBound- lowerBound) + "\n").data());
+
+		unpacker.unpackEPAWSS(payload, upperBound - lowerBound, iadsTimeForPacket);
 
 		//Make sure you unlock the array when you're done! 
 		SafeArrayUnaccessData(data.parray);
 
 		return S_OK;
 	}
-	STDMETHOD(get_Ch10PacketType)(ULONG* pval)
+	STDMETHOD(get_SupportsMultiChannel)(VARIANT_BOOL* doesSupport)
 	{
-		//Ethernet F0 data is type 0x68
-		if (pval == NULL) return E_POINTER;
-		*pval = 0x68;
+		//OutputDebugString("get_supportsMultiChannel1\n");
+		if (doesSupport == NULL) return E_POINTER;
+		//OutputDebugString("get_supportsMultiChannel2\n");
+		*doesSupport = VARIANT_TRUE;
 		return S_OK;
 	}
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(TX), CTX)
+	

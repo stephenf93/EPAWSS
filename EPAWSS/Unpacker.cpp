@@ -486,8 +486,11 @@ void Unpacker::loadParams(string paramCSVPath, int paramSet)
 		uint32_t numBits = endBit - startBit + 1;
 		startBit = startBit % 8; // change to bit offset from startByte
 
-		if ((paramSet == 1 && reportID % 2 == 0) || (paramSet == 2 && reportID % 2 == 1))
-			continue; // skip this parameter
+		if (paramSet != PARAM_SET_ALL)
+		{
+			if ((paramSet == PARAM_SET_RX && reportID % 2 == 0) || (paramSet == PARAM_SET_TX && reportID % 2 == 1))
+				continue; // skip this parameter
+		}
 
 		addParam(createParam(name, description, units, reportID, startByte, startBit, numBits, unpackMode, factor, group, subGroup));
 	}

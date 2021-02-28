@@ -132,4 +132,4 @@ public:
 	}
 };
 
-OBJECT_ENTRY_AUTO(__uuidof(RXdual), CRXdual)
+//OBJECT_ENTRY_AUTO(__uuidof(RXdual), CRXdual)

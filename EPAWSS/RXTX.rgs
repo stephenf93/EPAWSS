@@ -2,7 +2,7 @@ HKCR
 {
 	EPAWSS.RXTX.1 = s 'RXTX class'
 	{
-		CLSID = s '{1ffaaa65-1a81-4057-a6c7-c63ba93e67c1}'
+		CLSID = s '{beb76f1a-21a9-4e26-8fae-2c240b095fac}'
 	}
 	EPAWSS.RXTX = s 'RXTX class'
 	{		
@@ -10,7 +10,7 @@ HKCR
 	}
 	NoRemove CLSID
 	{
-		ForceRemove {1ffaaa65-1a81-4057-a6c7-c63ba93e67c1} = s 'RXTX class'
+		ForceRemove {beb76f1a-21a9-4e26-8fae-2c240b095fac} = s 'RXTX class'
 		{
 			ProgID = s 'EPAWSS.RXTX.1'
 			VersionIndependentProgID = s 'EPAWSS.RXTX'
