@@ -54,10 +54,13 @@ private:
 	byte dataBuf[maxBlobSize];
 	SAFEARRAY * blobData;
 
+#define SIZEOF_HEADER 64
+#define SIZEOF_NAME 58
 	struct Header {
 		uint16_t size;
 		uint16_t type;
+		uint16_t rptID;
+		byte name[SIZEOF_NAME];
 	};
-#define SIZEOF_HEADER 4
 };
 

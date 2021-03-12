@@ -1,5 +1,7 @@
 #include "BlobParam.h"
 
+#include <algorithm>
+
 BlobParam::BlobParam(
     std::string strname, 
     uint32_t inReportID, 
@@ -11,6 +13,7 @@ BlobParam::BlobParam(
     ds = dataStream;
 
     name = strname;
+    std::replace(name.begin(), name.end(), '_', ' ');
     reportID = inReportID;
     dataType = dt;
 
@@ -101,6 +104,19 @@ void BlobParam::commitData() {
     Header h;
     h.size = (numElements * sizeof(int)) + SIZEOF_HEADER;
     h.type = dataType;
+    h.rptID = (uint16_t)reportID;
+
+    std::string nameToCopy = this->name.substr(5); // 5 is the length of "Blob_" prefix
+
+    memset(h.name, 0, SIZEOF_NAME);
+    if (nameToCopy.length() > SIZEOF_NAME)
+    {
+        nameToCopy = nameToCopy.substr(nameToCopy.length() - SIZEOF_NAME + 3);
+        nameToCopy = "..." + nameToCopy;
+        memcpy(h.name, nameToCopy.data(), nameToCopy.length());
+    }
+    else
+        memcpy(h.name, nameToCopy.data(), nameToCopy.length());
     memcpy(byteData, &h, SIZEOF_HEADER);
 
     //OutputDebugString(std::string(std::to_string(byteData[0]) + " " + std::to_string(byteData[1]) + " " + 
